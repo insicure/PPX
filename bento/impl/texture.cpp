@@ -22,7 +22,7 @@ namespace nb
 
   Texture::Unload()
   {
-    if (glDeleteTextures(1, (int*)&this->id) == 1)
+    if (glDeleteTextures(1, &this->id) == 1)
     {
       TraceLog("tex io: unloaded %i", this->id);
       this->id = 0;
@@ -101,7 +101,7 @@ namespace nb
 
     // generate texture
     {
-      if (glGenTextures(1, (int*)&this->id) == 0)
+      if (glGenTextures(1, &this->id) == 0)
       {
         TraceLog("tex io: failed to generate texture");
         return -1;

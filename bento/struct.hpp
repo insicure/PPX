@@ -273,7 +273,7 @@ namespace nb {
 
   class Texture {
   public:
-    uint16_t id;
+    int id;
     uint16_t width;
     uint16_t height;
 
