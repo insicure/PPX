@@ -45,7 +45,7 @@ namespace nb
 
     if (format != ImageType::UNCOMPRESSED_INDEXED_256)
     {
-      if (image.Load(filePalette, 0, 0, ImageType::UNCOMPRESSED_PALETTE16) == -1)
+      if (palette.Load(filePalette, 0, 0, ImageType::UNCOMPRESSED_PALETTE16) == -1)
       {
         TraceLog("tex io: open palette failed %s", fileImage);
         return -1;
