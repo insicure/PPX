@@ -315,4 +315,19 @@ namespace nb {
     Texture texture;
   };
 
+  struct SpriteMap
+  {
+    uint16_t width;
+    uint16_t height;
+    int16_t offsetX;
+    int16_t offsetY;
+    uint16_t frameX;
+    uint16_t frameY;
+    uint16_t frameW;
+    uint16_t frameH;
+    bool isRotated;
+    f32 pivotX;
+    f32 pivotY;
+  };
+
 }
