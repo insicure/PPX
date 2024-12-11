@@ -17,7 +17,7 @@ namespace nb
       (color.r >> 3) & 0x1F,
       (color.g >> 3) & 0x1F,
       (color.b >> 3) & 0x1F,
-      (color.a >> 15) & 0x01
+      (color.a >> 7) & 0x01
     );
   }
 
