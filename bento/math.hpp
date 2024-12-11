@@ -1,7 +1,7 @@
 #pragma once
 
-#include "f32.hpp"
-#include "struct.hpp"
+#include "bento/f32.hpp"
+#include "bento/struct.hpp"
 
 #include <cstdlib>
 #include <nds/arm9/math.h>

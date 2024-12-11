@@ -1,5 +1,5 @@
-#include "utils.hpp"
-#include "math.hpp"
+#include "bento/utils.hpp"
+#include "bento/math.hpp"
 #include <cstdarg>
 #include <cstdio>
 

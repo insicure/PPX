@@ -1,6 +1,6 @@
 #pragma once
 
-#include "struct.hpp"
+#include "bento/struct.hpp"
 #include <cstddef>
 #include <nds/ndstypes.h>
 

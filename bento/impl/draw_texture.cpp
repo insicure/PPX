@@ -1,5 +1,5 @@
 
-#include "drawing.hpp"
+#include "bento/drawing.hpp"
 #include "nds/arm9/videoGL.h"
 
 extern s32 _depth;

@@ -15,11 +15,11 @@
 
 */
 
+#include "bento/file.hpp"
+#include "bento/utils.hpp"
 #include <nds/arm9/sassert.h>
 #include <nds/arm9/videoGL.h>
 #include <sys/_intsup.h>
-#include "file.hpp"
-#include "utils.hpp"
 #include <cstddef>
 #include <cstdio>
 

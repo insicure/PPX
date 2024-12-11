@@ -1,4 +1,4 @@
-#include "core.hpp"
+#include "bento/core.hpp"
 
 namespace nb {
   Scene::Scene() {}

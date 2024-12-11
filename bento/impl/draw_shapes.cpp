@@ -1,5 +1,5 @@
-#include "drawing.hpp"
-#include "math.hpp"
+#include "bento/drawing.hpp"
+#include "bento/math.hpp"
 #include <cstdint>
 #include <gl2d.h>
 #include <nds/arm9/video.h>

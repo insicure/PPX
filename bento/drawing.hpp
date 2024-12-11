@@ -1,7 +1,7 @@
 #pragma once
 
-#include "color.hpp"
-#include "struct.hpp"
+#include "bento/color.hpp"
+#include "bento/struct.hpp"
 #include <cstdint>
 #include <nds/ndstypes.h>
 

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "struct.hpp"
+#include "bento/struct.hpp"
 namespace nb {
 
   void TraceLog(const char *format, ...);

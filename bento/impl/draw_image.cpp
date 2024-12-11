@@ -1,5 +1,5 @@
-#include "struct.hpp"
-#include "drawing.hpp"
+#include "bento/struct.hpp"
+#include "bento/drawing.hpp"
 #include "nds/arm9/sassert.h"
 
 namespace nb

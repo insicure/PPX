@@ -1,6 +1,6 @@
 #include "nds/arm9/videoGL.h"
-#include "struct.hpp"
-#include "utils.hpp"
+#include "bento/struct.hpp"
+#include "bento/utils.hpp"
 
 // most ds opengl-ish ignore a few arguments, this make me easier to spot one
 #define IGNORED 0

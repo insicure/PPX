@@ -1,4 +1,4 @@
-#include "drawing.hpp"
+#include "bento/drawing.hpp"
 #include "nds/arm9/sassert.h"
 
 namespace nb

@@ -1,5 +1,5 @@
-#include "color.hpp"
-#include "struct.hpp"
+#include "bento/color.hpp"
+#include "bento/struct.hpp"
 #include "gl2d.h"
 
 s32 _depth = 0;
