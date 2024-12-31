@@ -268,7 +268,7 @@ namespace nb {
       : data(nullptr), width(0), height(0), format(ImageType::INVALID), width_padding(0) { }
 
     Image(const char *filename, const int width, const int height, const ImageType format);
-    Unload();
+    void Unload();
 
     int Load(const char *filename, const int width, const int height, const ImageType format);
     bool isValid();
@@ -284,7 +284,7 @@ namespace nb {
 
     Texture(const char *fileImage, const char *filePalette, const int width, const int height, const ImageType format);
     Texture(const Image &image, const Image &palette);
-    Unload();
+    void Unload();
 
     int Load(const char *fileImage, const char *filePalette, const int width, const int height, const ImageType format);
     int Load(const Image &image, const Image &palette);

@@ -20,7 +20,7 @@ namespace nb
     Load(image, palette);
   }
 
-  Texture::Unload()
+  void Texture::Unload()
   {
     if (glDeleteTextures(1, &this->id) == 1)
     {

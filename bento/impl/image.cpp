@@ -10,7 +10,7 @@ namespace nb
     Load(filename, width, height, format);
   }
 
-  Image::Unload()
+  void Image::Unload()
   {
     free(this->data);
     this->data = nullptr;
