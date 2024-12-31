@@ -1,15 +1,22 @@
 #include "bento/color.hpp"
 #include "bento/struct.hpp"
-#include "bento/palette_loader.hpp"
 #include "gl2d.h"
+#include <vector>
 
 s32 _depth = 0;
 
 namespace nb
 {
+  extern std::vector<Palette> PaletteList;
+
   void Initialize()
   {
     glScreen2D();
+
+    for (auto it = PaletteList.begin(); it != PaletteList.end(); ++it)
+      glDeleteTextures(1, &it->texid);
+
+    PaletteList.clear();
   }
 
   void ClearBackground(const Color &color)

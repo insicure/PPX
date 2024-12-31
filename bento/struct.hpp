@@ -4,8 +4,6 @@
 #include <cstdint>
 #include <cstdio>
 
-#define SILLYIMG_HEADER ((uint64_t)0x676D69796C6C6973)
-
 namespace nb {
 
   class Vec2 {
@@ -248,7 +246,7 @@ namespace nb {
     ImageType_INDEXED_8_A5, // 3bpp, Bit3-7: Alpha
     ImageType_PALETTE_16,
     // ImageType_TILE_8x8,
-    INVALID,
+    ImageType_INVALID,
   };
 
   struct Camera {
@@ -260,20 +258,23 @@ namespace nb {
 
   class Image {
   public:
-    void *data;
+    unsigned char *data;
     uint16_t width;
     uint16_t height;
+    uint8_t paletteId;
     ImageType format;
-    uint16_t width_padding;
 
     constexpr Image()
-      : data(nullptr), width(0), height(0), format(ImageType::INVALID), width_padding(0) { }
+      : data(nullptr), width(0), height(0), paletteId(0), format(ImageType_INVALID), originaldata(nullptr) { }
 
-    Image(const char *filename, const int width, const int height, const ImageType format);
+    Image(const char *filename);
     void Unload();
 
-    int Load(const char *filename, const int width, const int height, const ImageType format);
+    int Load(const char *filename);
     bool isValid();
+
+  private:
+    unsigned char *originaldata;
   };
 
   class Texture {
@@ -284,13 +285,12 @@ namespace nb {
 
     constexpr Texture() : id(0), width(0), height(0) {}
 
-    Texture(const char *fileImage, const char *filePalette, const int width, const int height, const ImageType format);
-    Texture(const Image &image, const Image &palette);
+    Texture(const Image &image);
+    Texture(const char *filename);
     void Unload();
 
-    int Load(const char *fileImage, const char *filePalette, const int width, const int height, const ImageType format);
-    int Load(const Image &image, const Image &palette);
-    int Load(const char *fileImage);
+    int Load(const Image &image);
+    int Load(const char *filename);
     bool isValid();
   };
 
@@ -299,8 +299,8 @@ namespace nb {
     int texid;
   };
 
-  #pragma pack(push, 1)  // Set the alignment to 1 byte (no padding)
-  struct sillyimg_metadata {
+  #pragma pack(push, 1) 
+  struct SillyImageMetadata {
     uint64_t header;
     uint8_t version;
     uint8_t format;
@@ -310,7 +310,7 @@ namespace nb {
     uint8_t compression;
     uint32_t length;
   };
-  #pragma pack(pop)  // Restore the previous alignment
+  #pragma pack(pop)
 
   struct BMFChar {
     uint8_t id;

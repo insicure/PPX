@@ -4,45 +4,77 @@
 #include <cstdlib>
 namespace nb
 {
-  Image::Image(const char *filename, const int width, const int height, const ImageType format)
-    : data(nullptr), width(width), height(height), format(format)
+  Image::Image(const char *filename)
+    : data(nullptr), width(0), height(0), format(ImageType_INVALID)
   {
-    Load(filename, width, height, format);
+    Load(filename);
   }
 
   void Image::Unload()
   {
-    free(this->data);
-    this->data = nullptr;
-    this->format = ImageType::INVALID;
-    this->width = 0;
-    this->height = 0;
-    this->width_padding = 0;
+    free(originaldata);
+    data = nullptr;
+    format = ImageType_INVALID;
+    width = 0;
+    height = 0;
+    originaldata = nullptr;
   }
   
-  int Image::Load(const char *filename, const int width, const int height, const ImageType format)
+  int Image::Load(const char *filename)
   {
     size_t size;
-    this->data = LoadFileData(filename, size);
-    if (data == nullptr)
+    originaldata = LoadFileData(filename, size);
+    if (originaldata == nullptr)
     {
       TraceLog("img io: open failed %s", filename);
       return -1;
     }
 
-    this->format = format;
+    if (size < sizeof(SillyImageMetadata))
+    {
+      TraceLog("img io: img size less than SillyImageMetadata size, %s", filename);
+      Unload();
+      return -1;
+    }
 
-    if (this->format == ImageType::ImageType_PALETTE_16)
+    SillyImageMetadata meta = *(SillyImageMetadata*)originaldata;
+
+    if (meta.header != 0x676D69796C6C6973)
     {
-      // use width/height as palette length
-      this->width = size/2;
-      this->height = size/2;
+      TraceLog("img io: invalid header metadata, %s", filename);
+      Unload();
+      return -1;
     }
-    else
+
+    if (meta.version != 0)
     {
-      this->width = width;
-      this->height = height;
+      TraceLog("img io: invalid version metadata, %s", filename);
+      Unload();
+      return -1;
     }
+
+    switch (meta.format) {
+      case 0: format = ImageType_R8G8B8A8; break;
+      case 1: format = ImageType_R5G5B5A1; break;
+      case 2: format = ImageType_INDEXED_4; break;
+      case 3: format = ImageType_INDEXED_16; break;
+      case 4: format = ImageType_INDEXED_256; break;
+      case 5: format = ImageType_INDEXED_32_A3; break;
+      case 6: format = ImageType_INDEXED_8_A5; break;
+      case 7: format = ImageType_PALETTE_16; break;
+
+      default:
+      {
+        TraceLog("img io: invalid format metadata, %s", filename);
+        Unload();
+        return -1;
+      }
+    }
+
+    paletteId = meta.paletteId;
+    width = meta.width;
+    height = meta.height;
+    data = (originaldata+sizeof(SillyImageMetadata));
 
     TraceLog("img io: loaded %s", filename);
     return 0;
@@ -50,6 +82,6 @@ namespace nb
 
   bool Image::isValid()
   {
-    return (this->data != nullptr || this->format != ImageType::INVALID);
+    return (this->data != nullptr || this->format != ImageType_INVALID);
   }
 }
