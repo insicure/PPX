@@ -233,6 +233,6 @@ namespace nb
   // BitmapFont drawing function
   void DrawBMF(const BMF &bmf, const char* text, const Vec2 &position);
 
-  // SpriteMap drawing function
-  void DrawSprite(const Texture &texture, const SpriteMap &sprite, const Vec2 &position, const int rotation, const f32 &scale);
+  // TextureMap drawing function
+  void DrawTextureMap(const TextureAtlas &atlas, const char* name, const Vec2 &position, const int rotation, const f32 &scale);
 }

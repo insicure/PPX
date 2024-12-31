@@ -27,14 +27,14 @@ namespace nb
 
   void Texture::Unload()
   {
-    if (glDeleteTextures(1, &this->id) == 1)
+    if (glDeleteTextures(1, &id) == 1)
     {
-      TraceLog("tex io: unloaded %i", this->id);
-      this->id = 0;
-      this->width = 0;
-      this->height = 0;
+      TraceLog("tex io: unloaded %i", id);
+      id = 0;
+      width = 0;
+      height = 0;
     }
-    else TraceLog("tex io: fail unload %i", this->id);
+    else TraceLog("tex io: fail unload %i", id);
   }
 
   int Texture::Load(const Image &image)
@@ -195,7 +195,7 @@ namespace nb
 
   bool Texture::isValid()
   {
-    return (this->id > 0) && (this->width > 0) && (this->height > 0);
+    return (id > 0) && (width > 0) && (height > 0);
   }
 
 }

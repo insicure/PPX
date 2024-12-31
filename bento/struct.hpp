@@ -339,12 +339,11 @@ namespace nb {
     Texture texture;
   };
 
-  struct SpriteImg
+  struct TextureMap : public Texture
   {
+    uint32_t hash;
     int16_t x;
     int16_t y;
-    int16_t width;
-    int16_t height;
     int16_t frame_x;
     int16_t frame_y;
     int16_t frame_width;
@@ -352,32 +351,26 @@ namespace nb {
     bool rotated;
   };
 
-  struct SpriteTex
-  {
-    Texture texture;
-    int16_t length;
-    SpriteImg *map;
-  };
-
-  class SpriteMap
+  class TextureAtlas
   {
   public:
-    bool trim_enable;
-    bool rotate_enable;
-    int16_t length;
-    SpriteTex *map;
+    Texture **texture;
+    TextureMap **map;
 
-    constexpr SpriteMap() : trim_enable(false), rotate_enable(false), length(0), map(nullptr) {}
-    SpriteMap(const char* filename);
-    ~SpriteMap();
+    int numTexture;
+    int numMap;
+
+    constexpr TextureAtlas() : texture(nullptr), map(nullptr), numTexture(0), numMap(0) {}
+    TextureAtlas(const char* filename);
+    ~TextureAtlas();
 
     int Load(const char* filename);
+    TextureMap *Find(const char *name) const;
+    void Unload();
     bool isValid();
   
   private:
-    void readString(FILE *file);
     void readString(FILE *file, char *buffer);
-    void Unload();
   };
 
 }

@@ -17,6 +17,7 @@ namespace nb
       glDeleteTextures(1, &it->texid);
 
     PaletteList.clear();
+    PaletteList.reserve(10);
   }
 
   void ClearBackground(const Color &color)

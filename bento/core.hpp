@@ -4,7 +4,7 @@ namespace nb
 {
   class Scene {
   public:
-    virtual ~Scene() = 0;
+    virtual ~Scene() {}
     virtual void Preload() = 0;
     virtual void Update() = 0;
 
