@@ -1,7 +1,10 @@
 #include "bento/utils.hpp"
 #include "bento/math.hpp"
+#include "nds/arm9/input.h"
 #include <cstdarg>
 #include <cstdio>
+
+static touchPosition touchtemp;
 
 namespace nb {
 
@@ -65,5 +68,26 @@ namespace nb {
     return origin * (scale * rotation) * translate;
   }
 
+  bool GetTouch(TouchPhase phase, touchPosition &touch) {
+    touchRead(&touch);
 
+    switch (phase){
+      case TouchPhase_RELEASE:
+      {
+        // store prev pos because px,py return 0 when KeysUp()
+        if (keysHeld() & KEY_TOUCH) touchtemp = touch;
+        if (keysUp() & KEY_TOUCH)
+        {
+          touch = touchtemp;
+          return true;
+        }
+        return false;
+      }
+
+      case TouchPhase_DOWN: return (keysDown() & KEY_TOUCH);
+      case TouchPhase_HELD: return (keysDown() & KEY_TOUCH);
+    }
+
+    return false;
+  }
 }
