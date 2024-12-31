@@ -27,9 +27,9 @@ namespace nb
 
   void Texture::Unload()
   {
+    TraceLog("tex io: unloaded %i", id);
     if (glDeleteTextures(1, &id) == 1)
     {
-      TraceLog("tex io: unloaded %i", id);
       id = 0;
       width = 0;
       height = 0;

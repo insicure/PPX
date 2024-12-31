@@ -1,6 +1,5 @@
 #include "bento/drawing.hpp"
 #include "bento/struct.hpp"
-#include "bento/utils.hpp"
 #include "nds/arm9/videoGL.h"
 #include <cstring>
 

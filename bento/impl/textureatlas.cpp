@@ -90,10 +90,18 @@ namespace nb
         break;
       }
 
-      map = (TextureMap**)malloc(numMap * sizeof(TextureMap*));
+      map = (TextureMap**)malloc(numTexture * sizeof(TextureMap*));
       if (map == nullptr)
       {
         TraceLog("spritemap: failed malloc maps %s", filename);
+        error = -1;
+        break;
+      }
+
+      numMap = (int16_t*)malloc(numTexture * sizeof(int16_t));
+      if (numMap == nullptr)
+      {
+        TraceLog("spritemap: failed malloc numMap %s", filename);
         error = -1;
         break;
       }
@@ -102,6 +110,7 @@ namespace nb
       {
         texture[i] = nullptr;
         map[i] = nullptr;
+        numMap[i] = 0;
       }
 
       for (int i_tex=0; i_tex<numTexture; i_tex++)
@@ -128,8 +137,8 @@ namespace nb
           break;
         }
 
-        fread(&numMap, sizeof(int16_t), 1, file);
-        map[i_tex] = (TextureMap*)malloc(numMap * sizeof(TextureMap));
+        fread(&numMap[i_tex], sizeof(int16_t), 1, file);
+        map[i_tex] = (TextureMap*)malloc(numMap[i_tex] * sizeof(TextureMap));
         if (map[i_tex] == nullptr)
         {
           TraceLog("spritemap: failed malloc map %i %s", i_tex, filename);
@@ -137,7 +146,7 @@ namespace nb
           break;
         }
 
-        for (int i_img=0; i_img<numMap; i_img++)
+        for (int i_img=0; i_img<numMap[i_tex]; i_img++)
         {
           char image_name[128];
           readString(file, image_name);
@@ -155,7 +164,7 @@ namespace nb
           fread(&map[i_tex][i_img].height, sizeof(int16_t), 1, file);
           fread(&map[i_tex][i_img].rotated, sizeof(uint8_t), 1, file);
 
-          TraceLog("%s(%u), %i %i %i %i, %i %i %i %i", image_name, map[i_tex][i_img].hash, map[i_tex][i_img].x, map[i_tex][i_img].y, map[i_tex][i_img].width, map[i_tex][i_img].height, map[i_tex][i_img].frame_x, map[i_tex][i_img].frame_y, map[i_tex][i_img].frame_width, map[i_tex][i_img].frame_height);
+          // TraceLog("%s(%u), %i %i %i %i, %i %i %i %i", image_name, map[i_tex][i_img].hash, map[i_tex][i_img].x, map[i_tex][i_img].y, map[i_tex][i_img].width, map[i_tex][i_img].height, map[i_tex][i_img].frame_x, map[i_tex][i_img].frame_y, map[i_tex][i_img].frame_width, map[i_tex][i_img].frame_height);
         }
 
       }
@@ -175,7 +184,7 @@ namespace nb
 
     for (int i_tex=0; i_tex<numTexture; i_tex++)
     {
-      for (int i_img=0; i_img<numMap; i_img++)
+      for (int i_img=0; i_img<numMap[i_tex]; i_img++)
       {
         if (hash == map[i_tex][i_img].hash)
           return &map[i_tex][i_img];
@@ -208,16 +217,21 @@ namespace nb
     if (texture != nullptr)
     {
       for (int i=0; i<numTexture; i++)
-        if (texture[i] != nullptr) free(texture[i]);
+        if (texture[i] != nullptr)
+        {
+          texture[i]->Unload();
+          free(texture[i]);
+        }
       
       free(texture);
     }
 
     if (map != nullptr)
     {
-      for (int i=0; i<numMap; i++)
-        if (map[i] != nullptr) free(map[i]);
 
+      for (int i=0; i<numTexture; i++)
+        if (map[i] != nullptr) free(map[i]);
+      
       free(map);
     }
 

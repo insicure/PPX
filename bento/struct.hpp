@@ -358,7 +358,7 @@ namespace nb {
     TextureMap **map;
 
     int numTexture;
-    int numMap;
+    int16_t *numMap;
 
     constexpr TextureAtlas() : texture(nullptr), map(nullptr), numTexture(0), numMap(0) {}
     TextureAtlas(const char* filename);
