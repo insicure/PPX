@@ -50,7 +50,7 @@ namespace nb
           || image.format == ImageType_INDEXED_32_A3
           || image.format == ImageType_INDEXED_32_A3)
       {
-        for (int i=0; i<PaletteList.size(); i++)
+        for (unsigned int i=0; i<PaletteList.size(); i++)
           if (PaletteList[i].pid == image.paletteId)
           {
             PaletteIndex = i;
