@@ -4,10 +4,9 @@ namespace nb
 {
   class Scene {
   public:
-    Scene();
-    virtual ~Scene();
-    virtual void Preload();
-    virtual void Update();
+    virtual ~Scene() = 0;
+    virtual void Preload() = 0;
+    virtual void Update() = 0;
 
     friend class App;
   

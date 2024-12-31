@@ -1,10 +1,6 @@
 #include "bento/core.hpp"
 
 namespace nb {
-  Scene::Scene() {}
-  Scene::~Scene() {}
-  void Scene::Preload() {}
-  void Scene::Update() {}
 
   // --
 
