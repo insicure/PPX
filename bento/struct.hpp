@@ -1,6 +1,8 @@
 #pragma once
 
 #include "bento/f32.hpp"
+#include <cstdint>
+#include <cstdio>
 
 namespace nb {
 
@@ -235,14 +237,15 @@ namespace nb {
   };
 
   enum ImageType {
-    UNCOMPRESSED_R8G8B8A8 = 0,
-    UNCOMPRESSED_R5G5B5A1,
-    UNCOMPRESSED_INDEXED_4,
-    UNCOMPRESSED_INDEXED_16,
-    UNCOMPRESSED_INDEXED_256,
-    UNCOMPRESSED_INDEXED_32_A3,
-    UNCOMPRESSED_INDEXED_8_A5,
-    UNCOMPRESSED_PALETTE16,
+    ImageType_R8G8B8A8 = 0,
+    ImageType_R5G5B5A1,
+    ImageType_INDEXED_4, // 2bpp
+    ImageType_INDEXED_16, // 4bpp
+    ImageType_INDEXED_256, // 8bpp
+    ImageType_INDEXED_32_A3, // 5bpp, Bit5-7: Alpha
+    ImageType_INDEXED_8_A5, // 3bpp, Bit3-7: Alpha
+    ImageType_PALETTE_16,
+    ImageType_TILE_8x8,
     INVALID,
   };
 
@@ -315,19 +318,45 @@ namespace nb {
     Texture texture;
   };
 
-  struct SpriteMap
+  struct SpriteImg
   {
-    uint16_t width;
-    uint16_t height;
-    int16_t offsetX;
-    int16_t offsetY;
-    uint16_t frameX;
-    uint16_t frameY;
-    uint16_t frameW;
-    uint16_t frameH;
-    bool isRotated;
-    f32 pivotX;
-    f32 pivotY;
+    int16_t x;
+    int16_t y;
+    int16_t width;
+    int16_t height;
+    int16_t frame_x;
+    int16_t frame_y;
+    int16_t frame_width;
+    int16_t frame_height;
+    bool rotated;
+  };
+
+  struct SpriteTex
+  {
+    Texture texture;
+    int16_t length;
+    SpriteImg *map;
+  };
+
+  class SpriteMap
+  {
+  public:
+    bool trim_enable;
+    bool rotate_enable;
+    int16_t length;
+    SpriteTex *map;
+
+    constexpr SpriteMap() : trim_enable(false), rotate_enable(false), length(0), map(nullptr) {}
+    SpriteMap(const char* filename);
+    ~SpriteMap();
+
+    int Load(const char* filename);
+    bool isValid();
+  
+  private:
+    void readString(FILE *file);
+    void readString(FILE *file, char *buffer);
+    void Unload();
   };
 
 }

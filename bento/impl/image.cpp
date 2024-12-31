@@ -32,7 +32,7 @@ namespace nb
 
     this->format = format;
 
-    if (this->format == ImageType::UNCOMPRESSED_PALETTE16)
+    if (this->format == ImageType::ImageType_PALETTE_16)
     {
       // use width/height as palette length
       this->width = size/2;

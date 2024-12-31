@@ -43,9 +43,9 @@ namespace nb
       return -1;
     }
 
-    if (format != ImageType::UNCOMPRESSED_INDEXED_256)
+    if (format != ImageType_INDEXED_256)
     {
-      if (palette.Load(filePalette, 0, 0, ImageType::UNCOMPRESSED_PALETTE16) == -1)
+      if (palette.Load(filePalette, 0, 0, ImageType::ImageType_PALETTE_16) == -1)
       {
         TraceLog("tex io: open palette failed %s", fileImage);
         return -1;
@@ -61,36 +61,36 @@ namespace nb
     const int param = GL_TEXTURE_WRAP_S|GL_TEXTURE_WRAP_T|GL_TEXTURE_COLOR0_TRANSPARENT|TEXGEN_OFF;
 
     switch (image.format) {
-      case UNCOMPRESSED_R8G8B8A8:
+      case ImageType_R8G8B8A8:
         // TODO: convert R8G8B8A8 into R5G5B5A1
         sassert(false, "invalid texture format!");
         return -1;
 
-      case UNCOMPRESSED_R5G5B5A1:
+      case ImageType_R5G5B5A1:
         type = GL_TEXTURE_TYPE_ENUM::GL_RGBA;
         break;
 
-      case UNCOMPRESSED_INDEXED_4:
+      case ImageType_INDEXED_4:
         type = GL_TEXTURE_TYPE_ENUM::GL_RGB4;
         break;
 
-      case UNCOMPRESSED_INDEXED_16:
+      case ImageType_INDEXED_16:
         type = GL_TEXTURE_TYPE_ENUM::GL_RGB16;
         break;
 
-      case UNCOMPRESSED_INDEXED_256:
+      case ImageType_INDEXED_256:
         type = GL_TEXTURE_TYPE_ENUM::GL_RGB256;
         break;
 
-      case UNCOMPRESSED_INDEXED_32_A3:
+      case ImageType_INDEXED_32_A3:
         type = GL_TEXTURE_TYPE_ENUM::GL_RGB32_A3;
         break;
 
-      case UNCOMPRESSED_INDEXED_8_A5:
+      case ImageType_INDEXED_8_A5:
         type = GL_TEXTURE_TYPE_ENUM::GL_RGB8_A5;
         break;
 
-      case UNCOMPRESSED_PALETTE16:
+      case ImageType_PALETTE_16:
         sassert(false, "invalid texture format!");
         return -1;
 
@@ -125,7 +125,7 @@ namespace nb
     }
 
     // generate ColorTableEXT
-    if (image.format != ImageType::UNCOMPRESSED_R5G5B5A1)
+    if (image.format != ImageType::ImageType_R5G5B5A1)
     {
       int result = glColorTableEXT(IGNORED, IGNORED, palette.width, IGNORED, IGNORED, palette.data);
 
