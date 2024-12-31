@@ -1,5 +1,6 @@
 #include "bento/color.hpp"
 #include "bento/struct.hpp"
+#include "bento/palette_loader.hpp"
 #include "gl2d.h"
 
 s32 _depth = 0;

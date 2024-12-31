@@ -4,6 +4,8 @@
 #include <cstdint>
 #include <cstdio>
 
+#define SILLYIMG_HEADER ((uint64_t)0x676D69796C6C6973)
+
 namespace nb {
 
   class Vec2 {
@@ -245,7 +247,7 @@ namespace nb {
     ImageType_INDEXED_32_A3, // 5bpp, Bit5-7: Alpha
     ImageType_INDEXED_8_A5, // 3bpp, Bit3-7: Alpha
     ImageType_PALETTE_16,
-    ImageType_TILE_8x8,
+    // ImageType_TILE_8x8,
     INVALID,
   };
 
@@ -288,8 +290,27 @@ namespace nb {
 
     int Load(const char *fileImage, const char *filePalette, const int width, const int height, const ImageType format);
     int Load(const Image &image, const Image &palette);
+    int Load(const char *fileImage);
     bool isValid();
   };
+
+  struct Palette {
+    uint8_t pid;
+    int texid;
+  };
+
+  #pragma pack(push, 1)  // Set the alignment to 1 byte (no padding)
+  struct sillyimg_metadata {
+    uint64_t header;
+    uint8_t version;
+    uint8_t format;
+    uint8_t paletteId;
+    uint16_t width;
+    uint16_t height;
+    uint8_t compression;
+    uint32_t length;
+  };
+  #pragma pack(pop)  // Restore the previous alignment
 
   struct BMFChar {
     uint8_t id;

@@ -1,13 +1,19 @@
+#include "bento/palette_loader.hpp"
+#include "nds/arm9/sassert.h"
 #include "nds/arm9/videoGL.h"
 #include "bento/struct.hpp"
 #include "bento/utils.hpp"
+#include "bento/file.hpp"
+#include <cstddef>
+#include <sys/_types.h>
 
 // most ds opengl-ish ignore a few arguments, this make me easier to spot one
 #define IGNORED 0
 
-
 namespace nb
 {
+  static Palette_loader pal(10);
+
   Texture::Texture(const char *fileImage, const char *filePalette, const int width, const int height, const ImageType format)
     : id(0), width(0), height(0)
   {
@@ -140,6 +146,82 @@ namespace nb
     this->width = image.width;
     this->height = image.height;
 
+    return 0;
+  }
+
+  int Texture::Load(const char *fileImage)
+  {
+    sillyimg_metadata image_metadata;
+    size_t image_size;
+    unsigned char* image = LoadFileData(fileImage, image_size);
+    sassert(image != nullptr, "image not found!");
+
+    image_metadata = *(sillyimg_metadata*)image;
+
+    GL_TEXTURE_TYPE_ENUM type = GL_TEXTURE_TYPE_ENUM::GL_NOTEXTURE;
+    const int param = GL_TEXTURE_WRAP_S|GL_TEXTURE_WRAP_T|GL_TEXTURE_COLOR0_TRANSPARENT|TEXGEN_OFF;
+
+    switch (image_metadata.format) {
+      case 1:
+        type = GL_RGBA;
+        break;
+
+      case 2:
+        type = GL_RGB4;
+        break;
+
+      case 3:
+        type = GL_RGB16;
+        break;
+
+      case 4:
+        type = GL_RGB256;
+        break;
+
+      case 5:
+        type = GL_RGB32_A3;
+        break;
+
+      case 6:
+        type = GL_RGB8_A5;
+        break;
+
+      default:
+        sassert(false, "invalid texture format!");
+        return -1;
+    }
+
+    // TraceLog("header: %llu", image_metadata.header);
+    // TraceLog("version: %u", image_metadata.version);
+    // TraceLog("format: %u", image_metadata.format);
+    // TraceLog("paletteId: %u", image_metadata.paletteId);
+    // TraceLog("width: %u", image_metadata.width);
+    // TraceLog("height: %u", image_metadata.height);
+    // TraceLog("compression: %u", image_metadata.compression);
+    // TraceLog("length: %u", image_metadata.length);
+
+    int res = glGenTextures(1, &id);
+    sassert(res == 1, "failed gen texture");
+
+    res = glBindTexture(IGNORED, id);
+    sassert(res == 1, "failed bind texture");
+    
+    res = glTexImage2D(IGNORED, IGNORED, type, image_metadata.width, image_metadata.height, IGNORED, param, (image+20));
+    sassert(res == 1, "failed glTexImage2D");
+
+    Palette *palette = pal.Get(image_metadata.paletteId);
+    sassert(palette != nullptr, "palette not found!");
+    TraceLog("load texture %u with pid %u,%u", id, palette->pid, palette->texid);
+
+    // rebind
+    res = glBindTexture(IGNORED, id);
+    sassert(res == 1, "failed bind texture");
+
+    glAssignColorTable(IGNORED, palette->texid);
+
+    width = image_metadata.width;
+    height = image_metadata.height;
+    free(image);
     return 0;
   }
 
