@@ -82,7 +82,7 @@ namespace nb
       }
 
       fread(&numTexture, sizeof(int16_t), 1, file);
-      texture = (Texture**)malloc(numTexture * sizeof(Texture*));
+      texture = (Texture*)malloc(numTexture * sizeof(Texture));
       if (texture == nullptr)
       {
         TraceLog("spritemap: failed malloc textures %s", filename);
@@ -108,7 +108,6 @@ namespace nb
 
       for (int i=0; i<numTexture; i++)
       {
-        texture[i] = nullptr;
         map[i] = nullptr;
         numMap[i] = 0;
       }
@@ -122,15 +121,7 @@ namespace nb
         readString(file, texture_name);
         sprintf(path, "nitro:/texturemap/%s_img.bin", texture_name);
 
-        texture[i_tex] = (Texture*)malloc(sizeof(Texture));
-        if (texture[i_tex] == nullptr)
-        {
-          TraceLog("spritemap: failed malloc texture %i %s", i_tex, filename);
-          error = -1;
-          break;
-        }
-
-        if (texture[i_tex]->Load(path) != 0)
+        if (texture[i_tex].Load(path) != 0)
         {
           TraceLog("spritemap: failed load texture %i %s", i_tex, filename);
           error = -1;
@@ -151,7 +142,7 @@ namespace nb
           char image_name[128];
           readString(file, image_name);
 
-          map[i_tex][i_img].id = texture[i_tex]->id;
+          map[i_tex][i_img].id = texture[i_tex].id;
           map[i_tex][i_img].hash = murmurhash(image_name, strlen(image_name), 0);
           
           fread(&map[i_tex][i_img].x, sizeof(int16_t), 1, file);
@@ -217,18 +208,13 @@ namespace nb
     if (texture != nullptr)
     {
       for (int i=0; i<numTexture; i++)
-        if (texture[i] != nullptr)
-        {
-          texture[i]->Unload();
-          free(texture[i]);
-        }
+        texture[i].Unload();
       
       free(texture);
     }
 
     if (map != nullptr)
     {
-
       for (int i=0; i<numTexture; i++)
         if (map[i] != nullptr) free(map[i]);
       

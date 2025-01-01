@@ -354,7 +354,7 @@ namespace nb {
   class TextureAtlas
   {
   public:
-    Texture **texture;
+    Texture *texture;
     TextureMap **map;
 
     int numTexture;
