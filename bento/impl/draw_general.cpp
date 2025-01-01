@@ -45,10 +45,10 @@ namespace nb
   void BeginCamera(const Camera &cam)
   {
     glPushMatrix();
-    glTranslatef32(-cam.target.x.value, -cam.target.y.value, 0);
+    glTranslatef32(cam.offset.x.Geti(), cam.offset.y.Geti(), 0);
     glRotateZi(degreesToAngle(cam.rotation));
     glScalef32(cam.zoom.value, cam.zoom.value, f32(1).value);
-    glTranslatef32(cam.offset.x.value, cam.offset.y.value, 0);
+    glTranslatef32(-cam.target.x.Geti(), -cam.target.y.Geti(), 0);
   }
 
   void EndCamera()
