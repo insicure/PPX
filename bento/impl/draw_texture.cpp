@@ -1,7 +1,6 @@
 
 #include "bento/drawing.hpp"
 #include "bento/struct.hpp"
-#include "bento/utils.hpp"
 #include "nds/arm9/trig_lut.h"
 #include "nds/arm9/videoGL.h"
 
@@ -15,11 +14,19 @@ namespace nb
 
     DrawTexture(
       texture,
-      {0, 0, frame.width, frame.height},
+      Rect(0, 0, frame.width, frame.height),
       transform,
-      {position.x, position.y, frame.width, frame.height},
+      Rect(position.x, position.y, frame.width, frame.height),
       0,
-      {0, 0});
+      Vec2(0, 0));
+
+    // DrawTexture(
+    //   texture,
+    //   {0, 0, frame.width, frame.height},
+    //   transform,
+    //   {position.x, position.y, frame.width, frame.height},
+    //   0,
+    //   {0, 0});
   }
 
   void DrawTexture(const Texture &texture, const int transform, const Vec2 &position, const int rotation, const Vec2 &scale, const Vec2 origin)
@@ -37,33 +44,14 @@ namespace nb
 
   void DrawTexture(const Texture &texture, const Rect &region, const int transform, const Rect &dest, const int rotation, const Vec2 &origin)
   {
-    /* 
-
-      A     W     D
-       -----------
-      |           |
-      |           | H
-      |           |
-       -----------
-      B           C
-
-      TL BL BR TR    1,  1   ABCD 0123
-      TR BR BL TL   -1,  1   DCBA 3210
-      BL TL TR BR    1, -1   BADC 1032
-      BR TR TL BL   -1, -1   CDAB 2301
-    */
-
     TextureFrame frame = texture.GetFrame();
-    // TraceLog("%i %i %i %i", frame.x, frame.y, frame.width, frame.height, frame.rotated);
     
+    // TODO: clamp region if bigger than frame
     const Rect region_out = (frame.rotated)
-      ? Rect(frame.x + region.y, frame.y + region.x, region.height, region.width)
+      ? Rect((frame.x + region.y) + (frame.height - region.height), frame.y + region.x, region.height, region.width)
       : Rect(frame.x + region.x, frame.y + region.y, region.width, region.height);
     
-    const Rect dest_out = (frame.rotated)
-      ? Rect(dest.x, dest.y, dest.height, dest.width)
-      : Rect(dest.x, dest.y, dest.width, dest.height);
-
+    const Rect dest_out(dest.x, dest.y, dest.width, dest.height);
 
     Vec2 tex_coord[4] = {
       {region_out.Left(), region_out.Top()},
@@ -120,7 +108,7 @@ namespace nb
 
       glTranslatef32(dest_out.x.Geti(), dest_out.y.Geti(), 0);
       if (rotation != 0) glRotateZi(degreesToAngle(rotation));
-      glTranslatef32(-origin.x.Geti(), -origin.y.Geti(), 0);
+      glTranslatef32(-origin.x.Geti() - frame.offset_x, -origin.y.Geti() - frame.offset_y, 0);
 
       // top left
       glTexCoord2i(tex_coord[tex_index[0]].x.Geti(), tex_coord[tex_index[0]].y.Geti());

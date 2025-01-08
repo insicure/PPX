@@ -201,12 +201,16 @@ namespace nb
 
   const TextureFrame Texture::GetFrame() const
   {
-    return TextureFrame(0, 0, width, height, false);
+    return TextureFrame(0, 0, width, height, 0, 0, false);
   }
 
   const TextureFrame TextureMap::GetFrame() const
   {
-    return TextureFrame(frame_x, frame_y, static_cast<uint16_t>(frame_width), static_cast<uint16_t>(frame_height), rotated);
+    return TextureFrame(
+      frame_x, frame_y,
+      static_cast<uint16_t>(frame_width), static_cast<uint16_t>(frame_height),
+      offset_x, offset_y,
+      rotated);
   }
 
 }

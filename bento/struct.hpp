@@ -281,13 +281,14 @@ namespace nb {
   {
     int16_t x, y;
     uint16_t width, height;
+    int16_t offset_x, offset_y;
     bool rotated;
 
     constexpr TextureFrame()
-      : x(0), y(0), width(0), height(0), rotated(false) { }
+      : x(0), y(0), width(0), height(0), offset_x(0), offset_y(0), rotated(false) { }
 
-    constexpr TextureFrame(int16_t x, int16_t y, uint16_t w, uint16_t h, bool rotated)
-      : x(x), y(y), width(w), height(h), rotated(rotated) { }
+    constexpr TextureFrame(int16_t x, int16_t y, uint16_t w, uint16_t h, int16_t offx, int16_t offy, bool rotated)
+      : x(x), y(y), width(w), height(h), offset_x(offx), offset_y(offy), rotated(rotated) { }
   };
 
   class Texture {
