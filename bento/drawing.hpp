@@ -8,6 +8,10 @@
 namespace nb
 {
 
+  #define TRANS_NONE    0x00
+  #define TRANS_FLIP_X  0x01
+  #define TRANS_FLIP_Y  0x02
+
 // --- General Drawing --- 
 
   /**
@@ -174,43 +178,9 @@ namespace nb
 
 // --- Texture Drawing ---
 
-  /**
-   * @brief draw texture
-   * 
-   * @param texture the texture to be drawn
-   * @param position x, y position on the screen
-   */
-  void DrawTexture(const Texture &texture, const Vec2 &position);
-
-  /**
-   * @brief draw texture with rotation and scaling
-   * 
-   * @param texture the texture to be drawn
-   * @param position x, y position on the screen
-   * @param rotation rotation degrees 0-360, will be converted into libnds angle
-   * @param scale the scaling ratio
-   */
-  void DrawTexture(const Texture &texture, const Vec2 &position, const int rotation, const f32 &scale);
-
-  /**
-   * @brief draw specific region of texture
-   * 
-   * @param texture the texture to be drawn
-   * @param source the region to be drawn within the texture
-   * @param position x, y position on the screen
-   */
-  void DrawTexture(const Texture &texture, const Rect &source, const Vec2 &position);
-
-  /**
-   * @brief draw specific region of texture on specific destination region
-   * 
-   * @param texture the texture to be drawn
-   * @param source the region to be drawn within the texture
-   * @param dest destination location on the screen
-   * @param origin x, y origin position relative to texture position
-   * @param rotation rotation degrees 0-360, will be converted into libnds angle
-   */
-  void DrawTexture(const Texture &texture, const Rect &source, const Rect &dest, const Vec2 &origin, const int rotation);
+  void DrawTexture(const Texture &texture, const int transform, const Vec2 &position);
+  void DrawTexture(const Texture &texture, const int transform, const Vec2 &position, const int rotation, const Vec2 &scale, const Vec2 origin);
+  void DrawTexture(const Texture &texture, const Rect &region, const int transform, const Rect &dest, const int rotation, const Vec2 &origin);
   
   void DrawTextureTiled(const Texture &texture, const Rect &source, const Rect &dest, const Vec2 &origin, const int rotation, const f32 &scale);
 
@@ -232,7 +202,4 @@ namespace nb
 
   // BitmapFont drawing function
   void DrawBMF(const BMF &bmf, const char* text, const Vec2 &position);
-
-  // TextureMap drawing function
-  void DrawTextureMap(const TextureAtlas &atlas, const char* name, const Vec2 &position, const int rotation, const f32 &scale);
 }

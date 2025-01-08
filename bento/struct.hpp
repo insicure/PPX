@@ -277,6 +277,19 @@ namespace nb {
     unsigned char *originaldata;
   };
 
+  struct TextureFrame
+  {
+    int16_t x, y;
+    uint16_t width, height;
+    bool rotated;
+
+    constexpr TextureFrame()
+      : x(0), y(0), width(0), height(0), rotated(false) { }
+
+    constexpr TextureFrame(int16_t x, int16_t y, uint16_t w, uint16_t h, bool rotated)
+      : x(x), y(y), width(w), height(h), rotated(rotated) { }
+  };
+
   class Texture {
   public:
     int id;
@@ -287,11 +300,14 @@ namespace nb {
 
     Texture(const Image &image);
     Texture(const char *filename);
-    void Unload();
+    virtual ~Texture() {} // to ensure polymorphism
 
+    void Unload();
     int Load(const Image &image);
     int Load(const char *filename);
     bool isValid();
+
+    virtual const TextureFrame GetFrame() const;
   };
 
   struct Palette {
@@ -339,16 +355,19 @@ namespace nb {
     Texture texture;
   };
 
-  struct TextureMap : public Texture
+  class TextureMap : public Texture
   {
+  public:
     uint32_t hash;
-    int16_t x;
-    int16_t y;
     int16_t frame_x;
     int16_t frame_y;
+    int16_t offset_x;
+    int16_t offset_y;
     int16_t frame_width;
     int16_t frame_height;
     bool rotated;
+  
+    const TextureFrame GetFrame() const override;
   };
 
   class TextureAtlas
@@ -365,10 +384,10 @@ namespace nb {
     ~TextureAtlas();
 
     int Load(const char* filename);
-    TextureMap *Find(const char *name) const;
     void Unload();
     bool isValid();
-  
+    TextureMap *operator[](const char *name);
+
   private:
     void readString(FILE *file, char *buffer);
   };

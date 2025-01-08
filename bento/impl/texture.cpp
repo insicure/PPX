@@ -2,6 +2,7 @@
 #include "nds/arm9/videoGL.h"
 #include "bento/struct.hpp"
 #include "bento/utils.hpp"
+#include <cstdint>
 #include <sys/_types.h>
 #include <vector>
 
@@ -196,6 +197,16 @@ namespace nb
   bool Texture::isValid()
   {
     return (id > 0) && (width > 0) && (height > 0);
+  }
+
+  const TextureFrame Texture::GetFrame() const
+  {
+    return TextureFrame(0, 0, width, height, false);
+  }
+
+  const TextureFrame TextureMap::GetFrame() const
+  {
+    return TextureFrame(frame_x, frame_y, static_cast<uint16_t>(frame_width), static_cast<uint16_t>(frame_height), rotated);
   }
 
 }

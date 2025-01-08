@@ -5,6 +5,7 @@
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
+#include <new>
 
 namespace nb
 {
@@ -82,26 +83,26 @@ namespace nb
       }
 
       fread(&numTexture, sizeof(int16_t), 1, file);
-      texture = (Texture*)malloc(numTexture * sizeof(Texture));
+      texture = new(std::nothrow) Texture[numTexture];
       if (texture == nullptr)
       {
-        TraceLog("spritemap: failed malloc textures %s", filename);
+        TraceLog("spritemap: failed allocate textures %s", filename);
         error = -1;
         break;
       }
 
-      map = (TextureMap**)malloc(numTexture * sizeof(TextureMap*));
+      map = new(std::nothrow) TextureMap*[numTexture];
       if (map == nullptr)
       {
-        TraceLog("spritemap: failed malloc maps %s", filename);
+        TraceLog("spritemap: failed allocate maps %s", filename);
         error = -1;
         break;
       }
 
-      numMap = (int16_t*)malloc(numTexture * sizeof(int16_t));
+      numMap = new(std::nothrow) int16_t[numTexture];
       if (numMap == nullptr)
       {
-        TraceLog("spritemap: failed malloc numMap %s", filename);
+        TraceLog("spritemap: failed allocate numMap %s", filename);
         error = -1;
         break;
       }
@@ -129,10 +130,10 @@ namespace nb
         }
 
         fread(&numMap[i_tex], sizeof(int16_t), 1, file);
-        map[i_tex] = (TextureMap*)malloc(numMap[i_tex] * sizeof(TextureMap));
+        map[i_tex] = new(std::nothrow) TextureMap[numMap[i_tex]];
         if (map[i_tex] == nullptr)
         {
-          TraceLog("spritemap: failed malloc map %i %s", i_tex, filename);
+          TraceLog("spritemap: failed allocate map %i %s", i_tex, filename);
           error = -1;
           break;
         }
@@ -145,17 +146,17 @@ namespace nb
           map[i_tex][i_img].id = texture[i_tex].id;
           map[i_tex][i_img].hash = murmurhash(image_name, strlen(image_name), 0);
           
-          fread(&map[i_tex][i_img].x, sizeof(int16_t), 1, file);
-          fread(&map[i_tex][i_img].y, sizeof(int16_t), 1, file);
-          fread(&map[i_tex][i_img].frame_width, sizeof(int16_t), 1, file);
-          fread(&map[i_tex][i_img].frame_height, sizeof(int16_t), 1, file);
           fread(&map[i_tex][i_img].frame_x, sizeof(int16_t), 1, file);
           fread(&map[i_tex][i_img].frame_y, sizeof(int16_t), 1, file);
+          fread(&map[i_tex][i_img].frame_width, sizeof(int16_t), 1, file);
+          fread(&map[i_tex][i_img].frame_height, sizeof(int16_t), 1, file);
+          fread(&map[i_tex][i_img].offset_x, sizeof(int16_t), 1, file);
+          fread(&map[i_tex][i_img].offset_y, sizeof(int16_t), 1, file);
           fread(&map[i_tex][i_img].width, sizeof(int16_t), 1, file);
           fread(&map[i_tex][i_img].height, sizeof(int16_t), 1, file);
           fread(&map[i_tex][i_img].rotated, sizeof(uint8_t), 1, file);
 
-          // TraceLog("%s(%u), %i %i %i %i, %i %i %i %i", image_name, map[i_tex][i_img].hash, map[i_tex][i_img].x, map[i_tex][i_img].y, map[i_tex][i_img].width, map[i_tex][i_img].height, map[i_tex][i_img].frame_x, map[i_tex][i_img].frame_y, map[i_tex][i_img].frame_width, map[i_tex][i_img].frame_height);
+          // TraceLog("%s(%u), %i %i %i %i, %i %i %i %i", image_name, map[i_tex][i_img].hash, map[i_tex][i_img].frame_x, map[i_tex][i_img].frame_y, map[i_tex][i_img].width, map[i_tex][i_img].height, map[i_tex][i_img].offset_x, map[i_tex][i_img].offset_y, map[i_tex][i_img].frame_width, map[i_tex][i_img].frame_height);
         }
 
       }
@@ -168,7 +169,7 @@ namespace nb
     return error;
   }
 
-  TextureMap *TextureAtlas::Find(const char *name) const
+  TextureMap *TextureAtlas::operator[](const char *name)
   {
     // find texturemap
     uint32_t hash = murmurhash(name, strlen(name), 0);
@@ -181,7 +182,6 @@ namespace nb
           return &map[i_tex][i_img];
       }
     }
-
     return nullptr;
   }
 
@@ -210,21 +210,23 @@ namespace nb
       for (int i=0; i<numTexture; i++)
         texture[i].Unload();
       
-      free(texture);
+      delete[] texture;
     }
 
     if (map != nullptr)
     {
       for (int i=0; i<numTexture; i++)
-        if (map[i] != nullptr) free(map[i]);
+        if (map[i] != nullptr) delete[] map[i];
       
-      free(map);
+      delete[] map;
     }
+
+    delete[] numMap;
 
     texture = nullptr;
     map = nullptr;
+    numMap = nullptr;
     numTexture = 0;
-    numMap = 0;
   }
 
 }
