@@ -35,9 +35,9 @@ namespace nb
 
     DrawTexture(
       texture,
-      {0, 0, frame.width, frame.height},
+      Rect(0, 0, frame.width, frame.height),
       transform,
-      {position.x, position.y, frame.width*scale.x, frame.height*scale.y},
+      Rect(position.x, position.y, frame.width*scale.x, frame.height*scale.y),
       rotation,
       origin);
   }
@@ -47,9 +47,17 @@ namespace nb
     TextureFrame frame = texture.GetFrame();
     
     // TODO: clamp region if bigger than frame
-    const Rect region_out = (frame.rotated)
-      ? Rect((frame.x + region.y) + (frame.height - region.height), frame.y + region.x, region.height, region.width)
+    Rect region_out = (frame.rotated)
+      ? Rect(
+          (frame.width == region.width)
+            ? frame.x + region.y
+            : frame.x + frame.height - region.height - region.y,
+          frame.y + region.x,
+          region.height,
+          region.width)
       : Rect(frame.x + region.x, frame.y + region.y, region.width, region.height);
+
+    
     
     const Rect dest_out(dest.x, dest.y, dest.width, dest.height);
 
