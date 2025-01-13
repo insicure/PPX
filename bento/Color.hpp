@@ -21,7 +21,7 @@ namespace ppx
       g((color >> 8) & 0xFF),
       b(color & 0xFF) { }
 
-    constexpr inline uint32_t ARGB() 
+    constexpr inline uint32_t ToInt() 
     {
       return (static_cast<uint32_t>(a) << 24) |
              (static_cast<uint32_t>(r) << 16) |
@@ -29,7 +29,7 @@ namespace ppx
              (static_cast<uint32_t>(b));
     }
 
-    constexpr inline uint16_t ARGB16() 
+    constexpr inline uint16_t ToInt16() 
     {
       return (static_cast<uint16_t>(a & 0x01) << 15) |
              (static_cast<uint16_t>(r >> 3)) |
