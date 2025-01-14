@@ -1,19 +1,9 @@
 #pragma once
 
-namespace nb
+#include "Scene.hpp"
+
+namespace ppx
 {
-  class Scene {
-  public:
-    virtual ~Scene() {}
-    virtual void Preload() = 0;
-    virtual void Update() = 0;
-
-    friend class App;
-  
-  private:
-    bool _preloaded = false;
-  };
-
   class App {
   public:
     void CreateWindow(const int w, const int h, const char *str);

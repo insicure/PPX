@@ -1,15 +1,16 @@
-#include "bento/color.hpp"
-#include "bento/struct.hpp"
+#include "../Drawing.hpp"
+#include "../Color.hpp"
+#include "../Palette.hpp"
 #include "gl2d.h"
 #include <vector>
 
 s32 _depth = 0;
 
-namespace nb
+namespace ppx
 {
   extern std::vector<Palette> PaletteList;
 
-  void Initialize()
+  void InitDrawing()
   {
     glScreen2D();
 
@@ -45,10 +46,10 @@ namespace nb
   void BeginCamera(const Camera &cam)
   {
     glPushMatrix();
-    glTranslatef32(cam.offset.x.Geti(), cam.offset.y.Geti(), 0);
+    glTranslatef32(cam.offset.x.toInt(), cam.offset.y.toInt(), 0);
     glRotateZi(degreesToAngle(cam.rotation));
     glScalef32(cam.zoom.value, cam.zoom.value, f32(1).value);
-    glTranslatef32(-cam.target.x.Geti(), -cam.target.y.Geti(), 0);
+    glTranslatef32(-cam.target.x.toInt(), -cam.target.y.toInt(), 0);
   }
 
   void EndCamera()
@@ -63,7 +64,7 @@ namespace nb
 
   void SetAlpha(const f32 &ratio)
   {
-    glPolyFmt(POLY_ALPHA((31*ratio).Geti()) | POLY_CULL_BACK);
+    glPolyFmt(POLY_ALPHA((31*ratio).toInt()) | POLY_CULL_BACK);
   }
 
   void SetAlphai(const int value)

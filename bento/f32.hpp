@@ -3,13 +3,13 @@
 #include <nds/arm9/math.h>
 #include <nds/arm9/trig_lut.h>
 
-namespace nb {
+namespace ppx {
   class f32 {
   public:
     int value;
 
     constexpr f32()              : value(0) { }
-    constexpr f32(int value) : value(intToFixed(value, 12)) { }
+    constexpr f32(int value)     : value(intToFixed(value, 12)) { }
     constexpr f32(float value)   : value(floatToFixed(value, 12)) { }
 
     static inline f32 Raw(int value)
@@ -20,8 +20,8 @@ namespace nb {
     }
 
     constexpr inline int Get() const { return value; }
-    constexpr inline int Geti() const { return fixedToInt(value, 12); }
-    constexpr inline float Getf() const { return fixedToFloat(value, 12); }
+    constexpr inline int toInt() const { return fixedToInt(value, 12); }
+    constexpr inline float toFloat() const { return fixedToFloat(value, 12); }
 
     inline f32 &operator=(const int rhs) { value = intToFixed(rhs, 12); return *this; }
     inline f32 &operator=(const float rhs) { value = floatToFixed(rhs, 12); return *this; }
@@ -74,10 +74,10 @@ namespace nb {
   static inline f32 operator+(const int lhs, const f32 &rhs)   { return f32::Raw(intToFixed(lhs, 12) + rhs.value); }
   static inline f32 operator-(const int lhs, const f32 &rhs)   { return f32::Raw(intToFixed(lhs, 12) - rhs.value); }
 
-  static inline int operator*=(int &lhs, const f32 &rhs)   { return lhs *= rhs.Geti(); }
-  static inline int operator/=(int &lhs, const f32 &rhs)   { return lhs /= rhs.Geti(); }
-  static inline int operator+=(int &lhs, const f32 &rhs)   { return lhs += rhs.Geti(); }
-  static inline int operator-=(int &lhs, const f32 &rhs)   { return lhs -= rhs.Geti(); }
+  static inline int operator*=(int &lhs, const f32 &rhs)   { return lhs *= rhs.toInt(); }
+  static inline int operator/=(int &lhs, const f32 &rhs)   { return lhs /= rhs.toInt(); }
+  static inline int operator+=(int &lhs, const f32 &rhs)   { return lhs += rhs.toInt(); }
+  static inline int operator-=(int &lhs, const f32 &rhs)   { return lhs -= rhs.toInt(); }
 
   static inline bool operator==(const int lhs, const f32 &rhs) { return intToFixed(lhs, 12) == rhs.value; }
   static inline bool operator!=(const int lhs, const f32 &rhs) { return intToFixed(lhs, 12) != rhs.value; }
@@ -110,10 +110,10 @@ namespace nb {
   static inline f32 operator+(const float lhs, const f32 &rhs)     { return f32::Raw(floatToFixed(lhs, 12) + rhs.value); }
   static inline f32 operator-(const float lhs, const f32 &rhs)     { return f32::Raw(floatToFixed(lhs, 12) - rhs.value); }
 
-  static inline float operator*=(float &lhs, const f32 &rhs)       { return lhs *= rhs.Getf(); }
-  static inline float operator/=(float &lhs, const f32 &rhs)       { return lhs /= rhs.Getf(); }
-  static inline float operator+=(float &lhs, const f32 &rhs)       { return lhs += rhs.Getf(); }
-  static inline float operator-=(float &lhs, const f32 &rhs)       { return lhs -= rhs.Getf(); }
+  static inline float operator*=(float &lhs, const f32 &rhs)       { return lhs *= rhs.toFloat(); }
+  static inline float operator/=(float &lhs, const f32 &rhs)       { return lhs /= rhs.toFloat(); }
+  static inline float operator+=(float &lhs, const f32 &rhs)       { return lhs += rhs.toFloat(); }
+  static inline float operator-=(float &lhs, const f32 &rhs)       { return lhs -= rhs.toFloat(); }
 
   static inline bool operator==(const float lhs, const f32 &rhs)   { return floatToFixed(lhs, 12) == rhs.value; }
   static inline bool operator!=(const float lhs, const f32 &rhs)   { return floatToFixed(lhs, 12) != rhs.value; }

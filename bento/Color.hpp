@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstdint>
+
 namespace ppx
 {
   class Color {
@@ -65,4 +66,14 @@ namespace ppx
     static inline Color Magenta() { return Color(255, 255, 0, 255); }
     static inline Color RayWhite() { return Color(255, 245, 245, 245); }
   };
+
+  static inline bool operator==(const Color& lhs, const Color& rhs)
+  {
+    return (lhs.a == rhs.a) && (lhs.r == rhs.r) && (lhs.g == rhs.g) && (lhs.b == rhs.b);
+  }
+
+  static inline bool operator!=(const Color& lhs, const Color& rhs)
+  {
+    return (lhs.a != rhs.a) && (lhs.r != rhs.r) && (lhs.g != rhs.g) && (lhs.b != rhs.b);
+  }
 }

@@ -1,8 +1,6 @@
-#include "bento/core.hpp"
+#include "../App.hpp"
 
-namespace nb {
-
-  // --
+namespace ppx {
 
   void App::CreateWindow(const int w, const int h, const char *str)
   {
@@ -38,4 +36,5 @@ namespace nb {
   {
     return _currentScene;
   }
+  
 }

@@ -1,11 +1,12 @@
 #pragma once
 
-#include "bento/color.hpp"
-#include "bento/struct.hpp"
+#include "Camera.hpp"
+#include "Color.hpp"
+#include "Rect.hpp"
 #include <cstdint>
 #include <nds/ndstypes.h>
 
-namespace nb
+namespace ppx
 {
 
   #define TRANS_NONE    0x00
@@ -17,7 +18,7 @@ namespace nb
   /**
    * @brief initialize 3d engine using gl2d
    */
-  void Initialize();
+  void InitDrawing();
 
   /**
    * @brief clear entire screen
@@ -176,30 +177,24 @@ namespace nb
   */
   void DrawPolyLines(const Vec2 vertices[], const int16_t length, const f32 &thick);
 
-// --- Texture Drawing ---
+  // void DrawTextureTiled(const Texture &texture, const Rect &source, const Rect &dest, const Vec2 &origin, const int rotation, const f32 &scale);
 
-  void DrawTexture(const Texture &texture, const int transform, const Vec2 &position);
-  void DrawTexture(const Texture &texture, const int transform, const Vec2 &position, const int rotation, const Vec2 &scale, const Vec2 origin);
-  void DrawTexture(const Texture &texture, const Rect &region, const int transform, const Rect &dest, const int rotation, const Vec2 &origin);
+  // // CPU Image drawing function
+  // void ImageClearBlack(const Image &dst);
+  // void ImageClearWhite(const Image &dst);
+  // void ImageClear(const Image &dst, const Color &color);
   
-  void DrawTextureTiled(const Texture &texture, const Rect &source, const Rect &dest, const Vec2 &origin, const int rotation, const f32 &scale);
+  // void ImageDrawHline(const Image &dst, const Vec2 &start, const Vec2 &end, const Color &color);
+  // void ImageDrawRect(const Image &dst, const Rect &rect, const Color &color);
+  
+  // void ImageDraw(const Image &dst, const Image &image, const Vec2 &position);
+  // void ImageDraw(const Image &dst, const Image &image, const Vec2 &position, const Color &colorkey);
+  // void ImageDraw(const Image &dst, const Image &image, const Vec2 &position, const int colorkeyIndex);
+  
+  // void ImageDraw(const Image &dst, const Image &image, const Rect &region, const Vec2 &position);
+  // void ImageDraw(const Image &dst, const Image &image, const Rect &region, const Vec2 &position, const Color &colorkey);
+  // void ImageDraw(const Image &dst, const Image &image, const Rect &region, const Vec2 &position, const int colorkeyIndex);
 
-  // CPU Image drawing function
-  void ImageClearBlack(const Image &dst);
-  void ImageClearWhite(const Image &dst);
-  void ImageClear(const Image &dst, const Color &color);
-  
-  void ImageDrawHline(const Image &dst, const Vec2 &start, const Vec2 &end, const Color &color);
-  void ImageDrawRect(const Image &dst, const Rect &rect, const Color &color);
-  
-  void ImageDraw(const Image &dst, const Image &image, const Vec2 &position);
-  void ImageDraw(const Image &dst, const Image &image, const Vec2 &position, const Color &colorkey);
-  void ImageDraw(const Image &dst, const Image &image, const Vec2 &position, const int colorkeyIndex);
-  
-  void ImageDraw(const Image &dst, const Image &image, const Rect &region, const Vec2 &position);
-  void ImageDraw(const Image &dst, const Image &image, const Rect &region, const Vec2 &position, const Color &colorkey);
-  void ImageDraw(const Image &dst, const Image &image, const Rect &region, const Vec2 &position, const int colorkeyIndex);
-
-  // BitmapFont drawing function
-  void DrawBMF(const BMF &bmf, const char* text, const Vec2 &position);
+  // // BitmapFont drawing function
+  // void DrawBMF(const BMF &bmf, const char* text, const Vec2 &position);
 }

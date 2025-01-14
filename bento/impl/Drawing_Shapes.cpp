@@ -1,5 +1,5 @@
-#include "bento/drawing.hpp"
-#include "bento/math.hpp"
+#include "../Drawing.hpp"
+#include "../Math.hpp"
 #include <cstdint>
 #include <gl2d.h>
 #include <nds/arm9/video.h>
@@ -7,7 +7,7 @@
 
 extern s32 _depth;
 
-namespace nb
+namespace ppx
 {
 
   void DrawPixel(const Vec2 &position)
@@ -15,9 +15,9 @@ namespace nb
     glBindTexture(0, 0);
     glBegin(GL_TRIANGLES);
     {
-      glVertex3v16(position.x.Geti(), position.y.Geti(), _depth);
-      glVertex2v16(position.x.Geti(), (position.y+1).Geti());
-      glVertex2v16((position.x+1).Geti(), position.y.Geti());
+      glVertex3v16(position.x.toInt(), position.y.toInt(), _depth);
+      glVertex2v16(position.x.toInt(), (position.y+1).toInt());
+      glVertex2v16((position.x+1).toInt(), position.y.toInt());
     }
     glEnd();
     _depth++;
@@ -29,9 +29,9 @@ namespace nb
     glBindTexture(0, 0);
     glBegin(GL_TRIANGLES);
     {
-      glVertex3v16(startPos.x.Geti(), startPos.y.Geti(), _depth);
-      glVertex2v16(endPos.x.Geti(), endPos.y.Geti());
-      glVertex2v16(endPos.x.Geti(), endPos.y.Geti());
+      glVertex3v16(startPos.x.toInt(), startPos.y.toInt(), _depth);
+      glVertex2v16(endPos.x.toInt(), endPos.y.toInt());
+      glVertex2v16(endPos.x.toInt(), endPos.y.toInt());
     }
     glEnd();
     _depth++;
@@ -50,10 +50,10 @@ namespace nb
 
       glBindTexture(0, 0);
       glBegin(GL_TRIANGLE_STRIP);
-        glVertex3v16((startPos.x-radius.x).Geti(), (startPos.y-radius.y).Geti(), _depth);
-        glVertex2v16((startPos.x+radius.x).Geti(), (startPos.y+radius.y).Geti());
-        glVertex2v16((endPos.x-radius.x).Geti(), (endPos.y-radius.y).Geti());
-        glVertex2v16((endPos.x+radius.x).Geti(), (endPos.y+radius.y).Geti());
+        glVertex3v16((startPos.x-radius.x).toInt(), (startPos.y-radius.y).toInt(), _depth);
+        glVertex2v16((startPos.x+radius.x).toInt(), (startPos.y+radius.y).toInt());
+        glVertex2v16((endPos.x-radius.x).toInt(), (endPos.y-radius.y).toInt());
+        glVertex2v16((endPos.x+radius.x).toInt(), (endPos.y+radius.y).toInt());
       glEnd();
       _depth++;
     }
@@ -72,14 +72,14 @@ namespace nb
     {
       glPushMatrix();
 
-      glTranslatef32(rec.Left().Geti(), rec.Top().Geti(), 0);
+      glTranslatef32(rec.Left().toInt(), rec.Top().toInt(), 0);
       if (rotation != 0) glRotateZi(degreesToAngle(rotation));
-      glTranslatef32((-origin.x).Geti(), (-origin.y).Geti(), 0);
+      glTranslatef32((-origin.x).toInt(), (-origin.y).toInt(), 0);
 
       glVertex3v16(0, 0, _depth);
-      glVertex2v16(0, rec.height.Geti());
-      glVertex2v16(rec.width.Geti(), 0);
-      glVertex2v16(rec.width.Geti(), rec.height.Geti());
+      glVertex2v16(0, rec.height.toInt());
+      glVertex2v16(rec.width.toInt(), 0);
+      glVertex2v16(rec.width.toInt(), rec.height.toInt());
 
       glPopMatrix(1);
     }
@@ -91,21 +91,21 @@ namespace nb
   {
     glBindTexture(0, 0);
     glBegin( GL_TRIANGLES );
-      glVertex3v16(rec.Left().Geti(), rec.Top().Geti(), _depth);
-      glVertex2v16(rec.Right().Geti(), rec.Top().Geti());
-      glVertex2v16(rec.Right().Geti(), rec.Top().Geti());
+      glVertex3v16(rec.Left().toInt(), rec.Top().toInt(), _depth);
+      glVertex2v16(rec.Right().toInt(), rec.Top().toInt());
+      glVertex2v16(rec.Right().toInt(), rec.Top().toInt());
 
-      glVertex3v16((rec.Right()-1).Geti(), rec.Top().Geti(), _depth);
-      glVertex2v16(rec.Right().Geti(), rec.Bottom().Geti());
-      glVertex2v16(rec.Right().Geti(), rec.Bottom().Geti());
+      glVertex3v16((rec.Right()-1).toInt(), rec.Top().toInt(), _depth);
+      glVertex2v16(rec.Right().toInt(), rec.Bottom().toInt());
+      glVertex2v16(rec.Right().toInt(), rec.Bottom().toInt());
 
-      glVertex3v16(rec.Right().Geti(), rec.Bottom().Geti(), _depth);
-      glVertex2v16(rec.Left().Geti(), rec.Bottom().Geti());
-      glVertex2v16(rec.Left().Geti(), rec.Bottom().Geti());
+      glVertex3v16(rec.Right().toInt(), rec.Bottom().toInt(), _depth);
+      glVertex2v16(rec.Left().toInt(), rec.Bottom().toInt());
+      glVertex2v16(rec.Left().toInt(), rec.Bottom().toInt());
 
-      glVertex3v16((rec.Left()+1).Geti(), rec.Bottom().Geti(), _depth);
-      glVertex2v16(rec.Left().Geti(), rec.Top().Geti());
-      glVertex2v16(rec.Left().Geti(), rec.Top().Geti());
+      glVertex3v16((rec.Left()+1).toInt(), rec.Bottom().toInt(), _depth);
+      glVertex2v16(rec.Left().toInt(), rec.Top().toInt());
+      glVertex2v16(rec.Left().toInt(), rec.Top().toInt());
     glEnd();
     _depth++;
   }
@@ -148,9 +148,9 @@ namespace nb
   {
     glBindTexture(0, 0);
     glBegin(GL_TRIANGLES);
-      glVertex3v16(v1.x.Geti(), v1.y.Geti(), _depth);
-      glVertex2v16(v2.x.Geti(), v2.y.Geti());
-      glVertex2v16(v3.x.Geti(), v3.y.Geti());
+      glVertex3v16(v1.x.toInt(), v1.y.toInt(), _depth);
+      glVertex2v16(v2.x.toInt(), v2.y.toInt());
+      glVertex2v16(v3.x.toInt(), v3.y.toInt());
     glEnd();
     _depth++;
   }
@@ -159,17 +159,17 @@ namespace nb
   {
     glBindTexture(0, 0);
     glBegin( GL_TRIANGLES );
-      glVertex3v16(v1.x.Geti(), v1.y.Geti(), _depth);
-      glVertex2v16(v2.x.Geti(), v2.y.Geti());
-      glVertex2v16(v2.x.Geti(), v2.y.Geti());
+      glVertex3v16(v1.x.toInt(), v1.y.toInt(), _depth);
+      glVertex2v16(v2.x.toInt(), v2.y.toInt());
+      glVertex2v16(v2.x.toInt(), v2.y.toInt());
 
-      glVertex3v16(v2.x.Geti(), v2.y.Geti(), _depth);
-      glVertex2v16(v3.x.Geti(), v3.y.Geti());
-      glVertex2v16(v3.x.Geti(), v3.y.Geti());
+      glVertex3v16(v2.x.toInt(), v2.y.toInt(), _depth);
+      glVertex2v16(v3.x.toInt(), v3.y.toInt());
+      glVertex2v16(v3.x.toInt(), v3.y.toInt());
 
-      glVertex3v16(v3.x.Geti(), v3.y.Geti(), _depth);
-      glVertex2v16(v1.x.Geti(), v1.y.Geti());
-      glVertex2v16(v1.x.Geti(), v1.y.Geti());
+      glVertex3v16(v3.x.toInt(), v3.y.toInt(), _depth);
+      glVertex2v16(v1.x.toInt(), v1.y.toInt());
+      glVertex2v16(v1.x.toInt(), v1.y.toInt());
     glEnd();
     _depth++;
   }
@@ -192,21 +192,21 @@ namespace nb
       for (int i=0; i<segments/2; i++)
       {
         glVertex3v16(
-          position.x.Geti(),
-          position.y.Geti(),
+          position.x.toInt(),
+          position.y.toInt(),
           _depth);
 
         glVertex2v16(
-          (position.x + Cosf32(angle+step*2)*radius).Geti(),
-          (position.y + Sinf32(angle+step*2)*radius).Geti());
+          (position.x + math::cos(angle+step*2)*radius).toInt(),
+          (position.y + math::sin(angle+step*2)*radius).toInt());
 
         glVertex2v16(
-          (position.x + Cosf32(angle+step)*radius).Geti(),
-          (position.y + Sinf32(angle+step)*radius).Geti());
+          (position.x + math::cos(angle+step)*radius).toInt(),
+          (position.y + math::sin(angle+step)*radius).toInt());
 
         glVertex2v16(
-          (position.x + Cosf32(angle)*radius).Geti(),
-          (position.y + Sinf32(angle)*radius).Geti());
+          (position.x + math::cos(angle)*radius).toInt(),
+          (position.y + math::sin(angle)*radius).toInt());
 
         angle += (step*2);
       }
@@ -223,17 +223,17 @@ namespace nb
       for (int i=0; i<360; i+=segments)
       {
         glVertex3v16(
-          (position.x + Cosf32(i)*radius).Geti(),
-          (position.y + Sinf32(i)*radius).Geti(),
+          (position.x + math::cos(i)*radius).toInt(),
+          (position.y + math::sin(i)*radius).toInt(),
           _depth);
 
         glVertex2v16(
-          (position.x + Cosf32(i+segments)*radius).Geti(),
-          (position.y + Sinf32(i+segments)*radius).Geti());
+          (position.x + math::cos(i+segments)*radius).toInt(),
+          (position.y + math::sin(i+segments)*radius).toInt());
 
         glVertex2v16(
-          (position.x + Cosf32(i+segments)*radius).Geti(),
-          (position.y + Sinf32(i+segments)*radius).Geti());
+          (position.x + math::cos(i+segments)*radius).toInt(),
+          (position.y + math::sin(i+segments)*radius).toInt());
       }
     }
     glEnd();

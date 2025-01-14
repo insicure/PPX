@@ -1,23 +1,20 @@
-#include "bento/external/murmurhash.h"
-#include "bento/struct.hpp"
-#include "bento/utils.hpp"
-#include <cstdint>
-#include <cstdio>
-#include <cstdlib>
+#include "../TextureAtlas.hpp"
+#include "../ErrorEnum.hpp"
+#include "../external/murmurhash.h"
+#include "../Tracelog.hpp"
+#include "nds/arm9/sassert.h"
 #include <cstring>
 #include <new>
 
-namespace nb
+#define ATLAS_HEADER 0x68637263
+
+namespace ppx
 {
   TextureAtlas::TextureAtlas(const char* filename)
   {
     Load(filename);
   }
 
-  TextureAtlas::~TextureAtlas()
-  {
-
-  }
 
   int TextureAtlas::Load(const char* filename)
   {
@@ -27,10 +24,10 @@ namespace nb
     while(true)
     {
       file = fopen(filename, "rb");
+      sassert(file != nullptr, "TextureAtlas: fopen failed");
       if (file == nullptr)
       {
-        TraceLog("spritemap: failed to load %s", filename);
-        error = -1;
+        error = Error_TextureAtlas_fopenFailed;
         break;
       }
 
@@ -38,11 +35,10 @@ namespace nb
       {
         uint32_t header;
         fread(&header, sizeof(uint32_t), 1, file);
-
-        if (header != 0x68637263)
+        sassert(header == ATLAS_HEADER, "TextureAtlas: invalid header");
+        if (header != ATLAS_HEADER)
         {
-          TraceLog("spritemap: invalid header %s", filename);
-          error = -1;
+          error = Error_TextureAtlas_InvalidHeader;
           break;
         }
       }
@@ -51,11 +47,10 @@ namespace nb
       {
         int16_t version;
         fread(&version, sizeof(int16_t), 1, file);
-
+        sassert(version == 0, "TextureAtlas: invalid version");
         if (version != 0)
         {
-          TraceLog("spritemap: invalid version %s", filename);
-          error = -1;
+          error = Error_TextureAtlas_InvalidVersion;
           break;
         }
       }
@@ -68,42 +63,42 @@ namespace nb
       fread(&enable_rotate, sizeof(uint8_t), 1, file);
       fread(&string_type, sizeof(uint8_t), 1, file);
 
+      sassert(enable_trim && enable_rotate, "TextureAtlas: Trim/Rotate disabled");
       if (!enable_trim || !enable_rotate)
       {
-        TraceLog("spritemap: trim/rotate not enabled %s", filename);
-        error = -1;
+        error = Error_TextureAtlas_TrimRotateDisabled;
         break;
       }
 
+      sassert(string_type == 0, "TextureAtlas: invalid string type");
       if (string_type != 0)
       {
-        TraceLog("spritemap: invalid string type %s", filename);
-        error = -1;
+        error = Error_TextureAtlas_InvalidStringType;
         break;
       }
 
       fread(&numTexture, sizeof(int16_t), 1, file);
       texture = new(std::nothrow) Texture[numTexture];
+      sassert(texture != nullptr, "TextureAtlas: allocate texture failed");
       if (texture == nullptr)
       {
-        TraceLog("spritemap: failed allocate textures %s", filename);
-        error = -1;
+        error = Error_TextureAtlas_AllocateFailed;
         break;
       }
 
       map = new(std::nothrow) TextureMap*[numTexture];
+      sassert(map != nullptr, "TextureAtlas: allocate map failed");
       if (map == nullptr)
       {
-        TraceLog("spritemap: failed allocate maps %s", filename);
-        error = -1;
+        error = Error_TextureAtlas_AllocateFailed;
         break;
       }
 
       numMap = new(std::nothrow) int16_t[numTexture];
+      sassert(numMap != nullptr, "TextureAtlas: allocate numMap failed");
       if (numMap == nullptr)
       {
-        TraceLog("spritemap: failed allocate numMap %s", filename);
-        error = -1;
+        error = Error_TextureAtlas_AllocateFailed;
         break;
       }
 
@@ -115,26 +110,22 @@ namespace nb
 
       for (int i_tex=0; i_tex<numTexture; i_tex++)
       {
-        if (error != 0) break;
+        if (error != Error_OK) break;
 
         char texture_name[50];
         char path[128];
         readString(file, texture_name);
         sprintf(path, "nitro:/texturemap/%s_img.bin", texture_name);
 
-        if (texture[i_tex].Load(path) != 0)
-        {
-          TraceLog("spritemap: failed load texture %i %s", i_tex, filename);
-          error = -1;
-          break;
-        }
+        error = texture[i_tex].Load(path);
+        if (error != Error_OK) break;
 
         fread(&numMap[i_tex], sizeof(int16_t), 1, file);
         map[i_tex] = new(std::nothrow) TextureMap[numMap[i_tex]];
+        sassert(map[i_tex] != nullptr, "TextureAtlas: allocate TextureMap failed");
         if (map[i_tex] == nullptr)
         {
-          TraceLog("spritemap: failed allocate map %i %s", i_tex, filename);
-          error = -1;
+          error = Error_TextureAtlas_AllocateFailed;
           break;
         }
 
@@ -145,7 +136,7 @@ namespace nb
 
           map[i_tex][i_img].id = texture[i_tex].id;
           map[i_tex][i_img].hash = murmurhash(image_name, strlen(image_name), 0);
-          
+
           fread(&map[i_tex][i_img].frame_x, sizeof(int16_t), 1, file);
           fread(&map[i_tex][i_img].frame_y, sizeof(int16_t), 1, file);
           fread(&map[i_tex][i_img].frame_width, sizeof(int16_t), 1, file);
@@ -160,13 +151,46 @@ namespace nb
         }
 
       }
-      
+
       break;
     }
 
     if (file != nullptr) fclose(file);
-    if (error != 0) Unload();
+    if (error != Error_OK) Unload();
+    else TraceLog("TextureAtlas: loaded %s", filename);
+
     return error;
+  }
+
+  void TextureAtlas::Unload()
+  {
+    if (texture != nullptr)
+    {
+      for (int i=0; i<numTexture; i++)
+        texture[i].Unload();
+
+      delete[] texture;
+    }
+
+    if (map != nullptr)
+    {
+      for (int i=0; i<numTexture; i++)
+        if (map[i] != nullptr) delete[] map[i];
+
+      delete[] map;
+    }
+
+    delete[] numMap;
+
+    texture = nullptr;
+    map = nullptr;
+    numMap = nullptr;
+    numTexture = 0;
+  }
+
+  bool TextureAtlas::isValid()
+  {
+    return (texture != nullptr && map != nullptr);
   }
 
   TextureMap *TextureAtlas::operator[](const char *name)
@@ -185,11 +209,6 @@ namespace nb
     return nullptr;
   }
 
-  bool TextureAtlas::isValid()
-  {
-    return (texture != nullptr && map != nullptr);
-  }
-
   void TextureAtlas::readString(FILE *file, char *buffer)
   {
     // null terminated string type
@@ -202,31 +221,4 @@ namespace nb
       if (c == '\0') break;
     }
   }
-
-  void TextureAtlas::Unload()
-  {
-    if (texture != nullptr)
-    {
-      for (int i=0; i<numTexture; i++)
-        texture[i].Unload();
-      
-      delete[] texture;
-    }
-
-    if (map != nullptr)
-    {
-      for (int i=0; i<numTexture; i++)
-        if (map[i] != nullptr) delete[] map[i];
-      
-      delete[] map;
-    }
-
-    delete[] numMap;
-
-    texture = nullptr;
-    map = nullptr;
-    numMap = nullptr;
-    numTexture = 0;
-  }
-
 }
