@@ -1,8 +1,7 @@
 #include "../SillyImage.hpp"
-#include "../ErrorEnum.hpp"
 #include "../FileData.hpp"
 #include "../Tracelog.hpp"
-#include "nds/arm9/sassert.h"
+#include "../Assert.hpp"
 #include <cstdlib>
 
 #define SILLYIMAGE_HEADER 0x676D69796C6C6973
@@ -11,46 +10,38 @@ namespace ppx
 {
 
   SillyImage::SillyImage(const char *filename)
-    : FileData(), width(0), height(0), paletteId(0), format(ImageType_INVALID), originaldata(nullptr)
+    : data(nullptr), width(0), height(0), paletteid(0), format(ImageType_INVALID), originaldata()
   {
     Load(filename);
   }
 
-  int SillyImage::Load(const char *filename)
+  bool SillyImage::Load(const char *filename)
   {
-    int error = FileData::Load(filename);
-    if (error != Error_OK)
-      return error;
 
-    originaldata = data;
-    data = nullptr;
+    bool res = false;
 
-    while(true)
+    do
     {
-      sassert(length > sizeof(SillyImageMetadata), "SillyImage: length < SillyImageMetadata");
-      if (length < sizeof(SillyImageMetadata))
-      {
-        error = Error_SillyImage_LengthMetadata;
-        break;
-      }
+      res = originaldata.Load(filename);
+      if (!res) break;
 
-      SillyImageMetadata meta = *(SillyImageMetadata*)originaldata;
-      
-      sassert(meta.header == SILLYIMAGE_HEADER, "SillyImage: invalid header");
-      if (meta.header != SILLYIMAGE_HEADER)
-      {
-        error = Error_SillyImage_InvalidHeader;
-        break;
-      }
+      // check if metadata exist
+      const bool cond = originaldata.length > sizeof(SillyImageMetadata);
+      res_sassert(res, cond, "SillyImage: length < SillyImageMetadata, %s", filename);
+      if (!res) break;
 
-      sassert(meta.version == 0, "SillyImage: invalid version");
-      if (meta.version != 0)
-      {
-        error = Error_SillyImage_InvalidVersion;
-        break;
-      }
+      SillyImageMetadata meta = *(SillyImageMetadata*)originaldata.data;
 
-      sassert(meta.format <= 7, "SillyImage: invalid format");
+      // check header
+      res_sassert(res, meta.header == SILLYIMAGE_HEADER, "SillyImage: invalid meta header, %s", filename);
+      if (!res) break;
+
+      // check version
+      res_sassert(res, meta.version == 0, "SillyImage: invalid meta version, %s", filename);
+      if (!res) break;
+
+      // check format
+      res_sassert(res, meta.format <= 7, "SillyImage: invalid meta format, %s", filename);
       switch (meta.format) {
         case 0: format = ImageType_R8G8B8A8; break;
         case 1: format = ImageType_R5G5B5A1; break;
@@ -60,34 +51,36 @@ namespace ppx
         case 5: format = ImageType_INDEXED_32_A3; break;
         case 6: format = ImageType_INDEXED_8_A5; break;
         case 7: format = ImageType_PALETTE_16; break;
-
-        default: error = Error_SillyImage_InvalidFormat; break;
+        
+        default: res = false; break;
       }
-      if (error == Error_SillyImage_InvalidFormat) break;
+      if (!res) break;
 
-      paletteId = meta.paletteId;
+      paletteid = meta.paletteid;
       width = meta.width;
       height = meta.height;
-      data = (originaldata+sizeof(SillyImageMetadata));
+      data = (originaldata.data+sizeof(SillyImageMetadata));
 
-      break;
-    }
+    } while(0);
 
-    if (error != Error_OK) Unload();
-    else TraceLog("SillyImage: loaded %s", filename);
+    if (!res)
+    {
+      TraceLog("SillyImage: load failed, %s", filename);
+      Unload();
+    } else TraceLog("SillyImage: load success, (%ux%u:%u) %s", width, height, paletteid, filename);
 
-    return error;
+    return res;
   }
 
   void SillyImage::Unload()
   {
-    if (originaldata) free(originaldata);
-
+    originaldata.Unload();
     data = nullptr;
-    originaldata = nullptr;
     format = ImageType_INVALID;
     width = 0;
     height = 0;
+
+    TraceLog("SillyImage: unloaded");
   }
 
   bool SillyImage::isValid()
