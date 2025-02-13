@@ -1,7 +1,7 @@
 #include "../FileData.hpp"
-#include "../ErrorEnum.hpp"
 #include "../Tracelog.hpp"
-#include "nds/arm9/sassert.h"
+#include "../Assert.hpp"
+#include <cstddef>
 #include <cstdint>
 #include <cstdio>
 #include <cstdlib>
@@ -15,69 +15,56 @@ namespace ppx
     Load(filename);
   }
 
-  int FileData::Load(const char *filename)
+  bool FileData::Load(const char *filename)
   {
     if (isValid()) Unload();
 
     FILE *file = nullptr;
-    int error = Error_OK;
-    
-    while (true)
+    bool res = false;
+
+    do
     {
+
       // check filename
-      if (filename == nullptr || strlen(filename) == 0)
-      {
-        error = Error_FileData_EmptyFilename;
-        break;
-      }
+      const bool cond = (filename != nullptr || strlen(filename) != 0);
+      res_sassert(res, cond, "FileData: empty filename");
+      if (!res) break;
 
       // fopen
       file = fopen(filename, "rb");
-      sassert(file != nullptr, "FileData: fopen failed");
-      if (file == nullptr)
-      {
-        error = Error_FileData_fopenFailed;
-        break;
-      }
+      res_sassert(res, file != nullptr, "FileData: fopen failed, %s", filename);
+      if (!res) break;
 
       // get length
       fseek(file, 0, SEEK_END);
       length = ftell(file);
       fseek(file, 0, SEEK_SET);
 
-      sassert(length > 0, "FileData: length < 0");
-      if (length < 0)
-      {
-        error = Error_FileData_InvalidLength;
-        break;
-      }
+      // check length
+      res_sassert(res, length > 0, "FileData: length < 0, %s", filename);
+      if (!res) break;
 
       // allocate memory
       data = (uint8_t*)malloc(length * sizeof(uint8_t));
-      sassert(data != nullptr, "FileData: malloc failed");
-      if (data == nullptr)
-      {
-        error = Error_FileData_AllocateFailed;
-        break;
-      }
+      res_sassert(res, data != nullptr, "FileData: malloc failed, %s", filename);
+      if (!res) break;
 
       // read
-      int count = fread(data, sizeof(uint8_t), length, file);
-      sassert(count == length, "FileData: parially loaded");
-      if (count != length)
-      {
-        error = Error_FileData_PartiallyLoaded;
-        break;
-      }
+      size_t count = fread(data, sizeof(uint8_t), length, file);
+      res_sassert(res, count == length, "FileData: partially loaded, %s", filename);
+      if (!res) break;
 
-      break;
-    }
+    } while(0);
 
     if (file) fclose(file);
-    if (error != Error_OK) Unload();
-    else TraceLog("FileData: loaded %s", filename);
+    if (!res)
+    {
+      TraceLog("FileData: load failed, %s", filename);
+      Unload();
+    }
+    else TraceLog("FileData: load success, %s", filename);
 
-    return error;
+    return res;
     fclose(file);
   }
 
@@ -86,6 +73,8 @@ namespace ppx
     if (data) free(data);
     data = nullptr;
     length = 0;
+
+    TraceLog("FileData: unloaded");
   }
 
   bool FileData::isValid()
