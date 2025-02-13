@@ -6,9 +6,10 @@ namespace ppx
 {
   class Vec2 {
   public:
-    f32 x, y;
+    f32 x{};
+    f32 y{};
 
-    constexpr Vec2()                 : x(), y() { }
+    constexpr Vec2()                 : x(0), y(0) { }
     constexpr Vec2(f32 x, f32 y)     : x(x), y(y) { }
   };
 

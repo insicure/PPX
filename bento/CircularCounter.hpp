@@ -6,8 +6,8 @@ namespace ppx
 {
   class CircularCounter {
   public:
-    int max;
-    int value;
+    int max = 0;
+    int value = 0;
 
     CircularCounter(int max = 0) : max(max), value(0) {}
 

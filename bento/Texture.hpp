@@ -13,9 +13,9 @@ namespace ppx
 
   class Texture {
   public:
-    int id;
-    uint16_t width;
-    uint16_t height;
+    int id = 0;
+    uint16_t width = 0;
+    uint16_t height = 0;
 
     constexpr Texture() : id(0), width(0), height(0) {}
 
@@ -27,8 +27,8 @@ namespace ppx
     virtual void Unload();
     virtual bool isValid();
 
-    virtual void Draw(const Vec2 &position, const int transform);
-    virtual void Draw(const Vec2 &position, const int transform, const int rotation, const Vec2 &scale, const Vec2 origin);
-    virtual void Draw(const Rect &region, const Rect &dest, const int transform, const int rotation, const Vec2 &origin);
+    virtual void Draw(const Vec2 &position, const int transform) const;
+    virtual void Draw(const Vec2 &position, const int transform, const int rotation, const Vec2 &scale, const Vec2 origin) const;
+    virtual void Draw(const Rect &region, const Rect &dest, const int transform, const int rotation, const Vec2 &origin) const;
   };
 }

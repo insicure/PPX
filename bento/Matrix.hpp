@@ -13,21 +13,21 @@ namespace ppx
       | m20 m21 m22 |
 
     */
-    f32 m00;
-    f32 m10;
-    f32 m20;
+    f32 m00{};
+    f32 m10{};
+    f32 m20{};
 
-    f32 m01;
-    f32 m11;
-    f32 m21;
+    f32 m01{};
+    f32 m11{};
+    f32 m21{};
 
-    f32 m02;
-    f32 m12;
-    f32 m22;
+    f32 m02{};
+    f32 m12{};
+    f32 m22{};
 
-    constexpr Matrix() : m00(), m10(), m20(),
-                         m01(), m11(), m21(),
-                         m02(), m12(), m22() { }
+    constexpr Matrix() : m00(0), m10(0), m20(0),
+                         m01(0), m11(0), m21(0),
+                         m02(0), m12(0), m22(0) { }
 
     constexpr Matrix(f32 m00, f32 m01, f32 m02,
                      f32 m10, f32 m11, f32 m12,
@@ -43,7 +43,7 @@ namespace ppx
     constexpr static inline Matrix Translation(const f32 &x, const f32 &y)  { return Matrix(1, 0, x, 0, 1, y, 0, 0, 1); }
     constexpr static inline Matrix Reflection(const bool x, const bool y)   { return Matrix((y) ? -1 : 1, 0, 0, 0, (x) ? -1 : 1, 0, 0, 0, 1); }
     constexpr static inline Matrix Scale(const f32 &x, const f32 &y)        { return Matrix(x, 0, 0, 0, y, 0, 0, 0, 1); }
-    constexpr static inline Matrix Rotation(const int degree)               { return Matrix(math::cos(degree), -math::sin(degree), 0, math::sin(degree), math::cos(degree), 0, 0, 0, 1); }
+    static inline Matrix Rotation(const int degree)               { return Matrix(math::cos(degree), -math::sin(degree), 0, math::sin(degree), math::cos(degree), 0, 0, 0, 1); }
 
     static inline f32 Determinate(const Matrix &m)
     {

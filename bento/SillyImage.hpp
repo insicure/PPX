@@ -32,24 +32,25 @@ namespace ppx
   };
   #pragma pack(pop)
 
-  class SillyImage : public FileData
+  class SillyImage
   {
   public:
-    uint16_t width;
-    uint16_t height;
-    uint8_t paletteId;
-    ImageType format;
+    uint8_t *data = nullptr;
+    uint16_t width = 0;
+    uint16_t height = 0;
+    uint8_t paletteId = 0;
+    ImageType format = ImageType_INVALID;
 
     constexpr SillyImage()
-      : FileData(), width(0), height(0), paletteId(0), format(ImageType_INVALID), originaldata(nullptr) { }
+      : data(nullptr), width(0), height(0), paletteId(0), format(ImageType_INVALID), originaldata() { }
 
     SillyImage(const char *filename);
 
-    int Load(const char *filename) override;
-    void Unload() override;
-    bool isValid() override;
+    bool Load(const char *filename);
+    void Unload();
+    bool isValid();
 
   private:
-    unsigned char *originaldata;
+    FileData originaldata{};
   };
 }

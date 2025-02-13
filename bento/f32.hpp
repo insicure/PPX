@@ -6,7 +6,7 @@
 namespace ppx {
   class f32 {
   public:
-    int value;
+    int value = 0;
 
     constexpr f32()              : value(0) { }
     constexpr f32(int value)     : value(intToFixed(value, 12)) { }
