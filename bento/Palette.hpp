@@ -14,6 +14,7 @@ namespace ppx
     constexpr Palette() : pid(0), texid(-1) { }
     bool isValid();
 
-    static int Get(Palette *palette, const int paletteId); 
+    static void Reset();
+    static Palette *Get(const int paletteid); 
   };
 }

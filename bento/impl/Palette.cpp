@@ -1,8 +1,7 @@
 #include "../Palette.hpp"
-#include "../ErrorEnum.hpp"
 #include "../SillyImage.hpp"
 #include "../Tracelog.hpp"
-#include "nds/arm9/sassert.h"
+#include "../Assert.hpp"
 #include "nds/arm9/videoGL.h"
 #include <cstdio>
 #include <vector>
@@ -12,88 +11,90 @@
 
 namespace ppx
 {
-  std::vector<Palette> PaletteList;
+  std::vector<Palette> PaletteList(0);
   
   bool Palette::isValid()
   {
     return (pid > 0) && (texid > 0);
   }
 
-  int Palette::Get(Palette *palette, const int paletteId)
+  void Palette::Reset()
   {
+    for (auto &i : PaletteList)
+    {
+      int temp_texid = i.texid;
+      int res = glDeleteTextures(1, &i.texid);
+      if (res != 0) TraceLog("Palette: unloaded id:%u pid:%u", temp_texid, i.pid);
+      else TraceLog("Palette: unload failed id:%u pid:%u", temp_texid, i.pid);
+    }
+
+    PaletteList.clear();
+    PaletteList.reserve(10);
+  }
+
+  Palette *Palette::Get(const int paletteid)
+  {
+    bool res = false;
+    res_sassert(res, paletteid != 0, "Palette: pid:0 is invalid!");
+    if (!res) return nullptr;
+    
     // check if palette already loaded
     for (Palette &i : PaletteList)
-      if (i.pid == paletteId)
+      if (i.pid == paletteid)
       {
-        palette = &i;
-        return Error_OK;
+        TraceLog("Palette: already exist, id:%u pid:%u", i.texid, i.pid);
+        return &i;
       }
 
-    // palette not loaded yet
-    int error = Error_OK;
-    SillyImage palette_img;
+    // palette not exist
+    SillyImage img;
     Palette pal;
 
-    while(true)
+    do
     {
-      // TODO: increase string buffer?
-      char path[30];
+      char path[128];
+      snprintf(path, sizeof(path), "nitro:/palette/%u.sillypal", paletteid);
 
-      // TODO: dont hardcode palette directory
-     
-      sprintf(path, "%s%u_pal.bin", "nitro:/palette/", paletteId);
+      res = img.Load(path);
+      if (!res) break;
 
-      error = palette_img.Load(path);
-      if (error != Error_OK)
-      {
-        TraceLog("Palette: load failed pid:%u", paletteId);
-        break;
-      }
+      pal.pid = paletteid;
 
       // generate palette texture
       {
-        int res = glGenTextures(1, &pal.texid);
-        sassert(res == 1, "Palette: glGenTextures failed");
-        if (res != 1)
-        {
-          error = Error_Palette_GenTexturesFailed;
-          break;
-        }
+        int r = glGenTextures(1, &pal.texid);
+        res_sassert(res, r == 1, "Palette: glGenTextures failed, pid:%u", pal.pid);
+        if (!res) break;
       }
 
       // bind palette texture
       {
-        int res = glBindTexture(IGNORED, pal.texid);
-        sassert(res == 1, "Palette: glBindTexture failed");
-        if (res != 1)
-        {
-          error = Error_Palette_BindTexturesFailed;
-          break;
-        }
+        int r = glBindTexture(IGNORED, pal.texid);
+        res_sassert(res, r == 1, "Palette: glBindTexture failed, id:%u pid:%u", pal.texid, pal.pid);
+        if (!res) break;
       }
 
       // generate ColorTableEXT
       {
-        int res = glColorTableEXT(IGNORED, IGNORED, palette_img.width, IGNORED, IGNORED, palette_img.data);
-        sassert(res == 1, "Palette: glColorTableEXT failed");
-        if (res != 1)
-        {
-          error = Error_Palette_GenColorTableFailed;
-          break;
-        }
+        int r = glColorTableEXT(IGNORED, IGNORED, img.width, IGNORED, IGNORED, img.data);
+        res_sassert(res, r == 1, "Palette: glColorTableEXT failed, id:%u pid:%u", pal.texid, pal.pid);
+        if (!res) break;
       }
 
-      TraceLog("Palette: loaded id:%u pid:%u", pal.pid, pal.texid);
+    } while(0);
 
-      pal.pid = palette_img.paletteId;
-      PaletteList.push_back(pal);
+    img.Unload();
 
-      break;
+    if (!res)
+    {
+      TraceLog("Palette: load failed, pid:%u", paletteid);
+      return nullptr;
     }
-
-    palette_img.Unload();
-    if (error != Error_OK) palette = nullptr;
-    else palette = &PaletteList.back();
-    return error;
+    else
+    {
+      TraceLog("Palette: load success, id:%u pid:%u", pal.texid, pal.pid);
+      PaletteList.push_back(pal);
+      return &PaletteList.back();
+    }
   }
 }

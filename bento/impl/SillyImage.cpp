@@ -67,20 +67,27 @@ namespace ppx
     {
       TraceLog("SillyImage: load failed, %s", filename);
       Unload();
-    } else TraceLog("SillyImage: load success, (%ux%u:%u) %s", width, height, paletteid, filename);
+    }
+    else
+    {
+      // TraceLog("SillyImage: load success, (%ux%u) pid:%u %s", width, height, paletteid, filename);
+    }
 
     return res;
   }
 
   void SillyImage::Unload()
   {
-    originaldata.Unload();
+    if (originaldata.isValid())
+    {
+      originaldata.Unload();
+      // TraceLog("SillyImage: unloaded");
+    }
+
     data = nullptr;
     format = ImageType_INVALID;
     width = 0;
     height = 0;
-
-    TraceLog("SillyImage: unloaded");
   }
 
   bool SillyImage::isValid()

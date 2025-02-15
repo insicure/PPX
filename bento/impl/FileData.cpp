@@ -70,15 +70,18 @@ namespace ppx
 
   void FileData::Unload()
   {
-    if (data) free(data);
+    if (isValid()) 
+    {
+      free(data);
+      // TraceLog("FileData: unloaded");
+    }
+
     data = nullptr;
     length = 0;
-
-    TraceLog("FileData: unloaded");
   }
 
   bool FileData::isValid()
   {
-    return (data != nullptr) && (length > 0);
+    return (data != nullptr);
   }
 }

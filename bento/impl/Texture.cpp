@@ -1,16 +1,19 @@
 #include "../Texture.hpp"
-#include "../ErrorEnum.hpp"
 #include "../Palette.hpp"
 #include "../Rect.hpp"
 #include "../SillyImage.hpp"
 #include "../Tracelog.hpp"
+#include "../Assert.hpp"
 #include "../Math.hpp"
-#include "nds/arm9/sassert.h"
 #include "nds/arm9/videoGL.h"
+#include <cassert>
 #include <cstdio>
 
 // most ds opengl-ish ignore a few arguments, this make me easier to spot one
 #define IGNORED 0
+
+// simple check if size is power of 2
+#define IS_POWER2(num) ((num >= 8 && num <= 1024) && !(num & (num - 1)))
 
 extern s32 _depth;
 
@@ -30,122 +33,161 @@ namespace ppx
   }
 
 
-  int Texture::Load(const SillyImage &image)
+  bool Texture::Load(const SillyImage &image)
   {
-    int error = Error_OK;
-
-    // find palette
+    bool res = false;
     Palette *palette = nullptr;
+    GL_TEXTURE_TYPE_ENUM gl_type = GL_TEXTURE_TYPE_ENUM::GL_NOTEXTURE;
+    const int gl_param = GL_TEXTURE_WRAP_S|GL_TEXTURE_WRAP_T|GL_TEXTURE_COLOR0_TRANSPARENT|TEXGEN_OFF;
+
+    do
     {
-      if (image.format == ImageType_INDEXED_4 ||
-          image.format == ImageType_INDEXED_16 ||
-          image.format == ImageType_INDEXED_256 ||
-          image.format == ImageType_INDEXED_32_A3 ||
-          image.format == ImageType_INDEXED_32_A3)
+      // verify image dimension
+      res_sassert(res, IS_POWER2(image.width) && IS_POWER2(image.height), "Texture: invalid dimension, (%ux%u)", image.width, image.height);
+      if (!res) break;
+
+      // find palette
       {
-        error = Palette::Get(palette, image.paletteId);
-        if (error != Error_OK)
-          return error;
+        if (image.format == ImageType_INDEXED_4 ||
+            image.format == ImageType_INDEXED_16 ||
+            image.format == ImageType_INDEXED_256 ||
+            image.format == ImageType_INDEXED_32_A3 ||
+            image.format == ImageType_INDEXED_32_A3)
+        {
+          palette = Palette::Get(image.paletteid);
+          res_sassert(res, palette != nullptr, "Texture: couldnt find palette, pid:%u", image.paletteid);
+          if (!res) break;
+        }
       }
-    }
 
-    GL_TEXTURE_TYPE_ENUM type = GL_TEXTURE_TYPE_ENUM::GL_NOTEXTURE;
-    const int param = GL_TEXTURE_WRAP_S|GL_TEXTURE_WRAP_T|GL_TEXTURE_COLOR0_TRANSPARENT|TEXGEN_OFF;
+      // find texture type
+      switch (image.format)
+      {
+        case ImageType_R5G5B5A1: gl_type = GL_TEXTURE_TYPE_ENUM::GL_RGBA; break;
+        case ImageType_INDEXED_4: gl_type = GL_TEXTURE_TYPE_ENUM::GL_RGB4; break;
+        case ImageType_INDEXED_16: gl_type = GL_TEXTURE_TYPE_ENUM::GL_RGB16; break;
+        case ImageType_INDEXED_256: gl_type = GL_TEXTURE_TYPE_ENUM::GL_RGB256; break;
+        case ImageType_INDEXED_32_A3: gl_type = GL_TEXTURE_TYPE_ENUM::GL_RGB32_A3; break;
+        case ImageType_INDEXED_8_A5: gl_type = GL_TEXTURE_TYPE_ENUM::GL_RGB8_A5; break;
 
-    switch (image.format)
+        case ImageType_R8G8B8A8: // TODO: convert R8G8B8A8 into R5G5B5A1
+        case ImageType_PALETTE_16:
+        case ImageType_INVALID:
+        default: res = false; break;
+      }
+      if (!res) break;
+
+      // generate texture
+      {
+        int r = glGenTextures(1, &id);
+        res_sassert(res, r == 1, "Texture: glGenTextures failed");
+        if (!res) break;
+      }
+
+      // bind texture
+      {
+        int r = glBindTexture(IGNORED, id);
+        res_sassert(res, r == 1, "Texture: glBindTexture failed");
+        if (!res) break;
+      }
+
+      // generate TexImage2D
+      {
+        int r = glTexImage2D(IGNORED, IGNORED, gl_type, image.width, image.height, IGNORED, gl_param, image.data);
+        res_sassert(res, r == 1, "Texture: glTexImage2D failed");
+        if (!res) break;
+      }
+
+      // assign palette
+      if (palette)
+      {
+        int r = glAssignColorTable(IGNORED, palette->texid);
+        res_sassert(res, r == 1, "Texture: glAssignColorTable failed");
+        if (!res) break;
+      }
+      // if (image.format == ImageType_INDEXED_256 ||
+      //     image.format == ImageType_INDEXED_16 ||
+      //     image.format == ImageType_INDEXED_4 ||
+      //     image.format == ImageType_INDEXED_32_A3 ||
+      //     image.format == ImageType_INDEXED_8_A5)
+      // {
+      //   SillyImage pal_img;
+
+      //   char path[128];
+      //   snprintf(path, sizeof(path), "nitro:/palette/%u.sillypal", image.paletteid);
+
+      //   res = pal_img.Load(path);
+      //   if (!res) break;
+
+      //   int r = glColorTableEXT(IGNORED, IGNORED, pal_img.width, IGNORED, IGNORED, pal_img.data);
+      //   printf("%u\n", r);
+
+      //   pal_img.Unload();
+      // }
+
+    } while(0);
+
+    if (!res)
     {
-      case ImageType_R8G8B8A8:
-        // TODO: convert R8G8B8A8 into R5G5B5A1
-        sassert(false, "Texture: invalid texture format!");
-        return Error_Texture_InvalidFormat;
-
-      case ImageType_R5G5B5A1: type = GL_TEXTURE_TYPE_ENUM::GL_RGBA; break;
-      case ImageType_INDEXED_4: type = GL_TEXTURE_TYPE_ENUM::GL_RGB4; break;
-      case ImageType_INDEXED_16: type = GL_TEXTURE_TYPE_ENUM::GL_RGB16; break;
-      case ImageType_INDEXED_256: type = GL_TEXTURE_TYPE_ENUM::GL_RGB256; break;
-      case ImageType_INDEXED_32_A3: type = GL_TEXTURE_TYPE_ENUM::GL_RGB32_A3; break;
-      case ImageType_INDEXED_8_A5: type = GL_TEXTURE_TYPE_ENUM::GL_RGB8_A5; break;
-
-      case ImageType_PALETTE_16:
-        sassert(false, "Texture: invalid texture format!");
-        return Error_Texture_InvalidFormat;
-
-      case ImageType_INVALID:
-        sassert(false, "Texture: invalid texture format!");
-        return Error_Texture_InvalidFormat;
-    }
-
-    // generate texture
-    {
-      int res = glGenTextures(1, &id);
-      sassert(res == 1, "Texture: glGenTextures failed");
-      if (res != 1) return Error_Texture_GenTexturesFailed;
-    }
-
-    // bind texture
-    {
-      int res = glBindTexture(IGNORED, id);
-      sassert(res == 1, "Texture: glBindTexture failed");
-      if (res != 1) return Error_Texture_BindTexturesFailed;
-    }
-
-    // generate TexImage2D
-    {
-      int res = glTexImage2D(IGNORED, IGNORED, type, image.width, image.height, IGNORED, param, image.data);
-      sassert(res == 1, "Texture: glTexImage2D failed");
-      if (res != 1) return Error_Texture_TexImage2DFailed;
-    }
-
-    // assign palette
-    if (palette)
-    {
-      int res = glAssignColorTable(IGNORED, palette->texid);
-      sassert(res == 1, "Texture: glAssignColorTable failed");
-      if (res != 1) return Error_Texture_AssignPaletteFailed;
-    }
-
-    if (palette)
-      TraceLog("Texture: loaded id:%u pid:%u", id, palette->pid);
+      TraceLog("Texture: load failed");
+      Unload();
+    } 
     else
-      TraceLog("Texture: loaded id:%u", id);
+    {
+      width = image.width;
+      height = image.height;
+      
+      if (palette)
+        TraceLog("Texture: load success, (%ux%u) id:%u pid:%u", width, height, id, palette->pid);
+      else
+        TraceLog("Texture: load success, (%ux%u) id:%u pid:none", width, height, id);
+    }
 
-    width = image.width;
-    height = image.height;
-
-    return Error_OK;
+    return res;
   }
 
-  int Texture::Load(const char *filename)
+  bool Texture::Load(const char *filename)
   {
-    SillyImage image;
-    int error = image.Load(filename);
-    if (error != Error_OK)
-      return error;
+    bool res = false;
+    SillyImage img;
 
-    error = Load(image);
-    image.Unload();
+    do
+    {
+      res = img.Load(filename);
+      if (!res) break;
 
-    return error;
+      res = Load(img);
+      if (!res) break;
+
+    } while(0);
+
+    img.Unload();
+    return res;
   }
 
   void Texture::Unload()
   {
-    if (glDeleteTextures(1, &id) == 1)
+    if (isValid())
     {
-      TraceLog("Texture: unload id:%i", id);
-      id = 0;
-      width = 0;
-      height = 0;
+      int temp_id = id;
+      if (glDeleteTextures(1, &id) == 1)
+      {
+
+        TraceLog("Texture: unload id:%i", temp_id);
+        id = -1;
+        width = 0;
+        height = 0;
+      }
+      else TraceLog("Texture: failed unload id:%i", temp_id);
     }
-    else TraceLog("Texture: failed unload id:%i", id);
   }
 
   bool Texture::isValid()
   {
-    return (id > 0) && (width > 0) && (height > 0);
+    return (width > 0) && (height > 0);
   }
 
-  void Texture::Draw(const Vec2 &position, const int transform)
+  void Texture::Draw(const Vec2 &position, const int transform) const
   {
     Draw(
       Rect(0, 0, width, height),
@@ -156,7 +198,7 @@ namespace ppx
     );
   }
 
-  void Texture::Draw(const Vec2 &position, const int transform, const int rotation, const Vec2 &scale, const Vec2 origin)
+  void Texture::Draw(const Vec2 &position, const int transform, const int rotation, const Vec2 &scale, const Vec2 origin) const
   {
     Draw(
       Rect(0, 0, width, height),
@@ -167,7 +209,7 @@ namespace ppx
     );
   }
 
-  void Texture::Draw(const Rect &region, const Rect &dest, const int transform, const int rotation, const Vec2 &origin)
+  void Texture::Draw(const Rect &region, const Rect &dest, const int transform, const int rotation, const Vec2 &origin) const
   {
     Vec2 tex_coord[4] = {
       {region.Left(), region.Top()},

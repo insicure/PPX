@@ -34,7 +34,7 @@ namespace ppx
     return (id > 0) && (width > 0) && (height > 0) && (hash != 0);
   }
 
-  void TextureMap::Draw(const Vec2 &position, const int transform)
+  void TextureMap::Draw(const Vec2 &position, const int transform) const
   {
     Draw(
       Rect(0, 0, frame_width, frame_height),
@@ -45,7 +45,7 @@ namespace ppx
     );
   }
 
-  void TextureMap::Draw(const Vec2 &position, const int transform, const int rotation, const Vec2 &scale, const Vec2 origin)
+  void TextureMap::Draw(const Vec2 &position, const int transform, const int rotation, const Vec2 &scale, const Vec2 origin) const
   {
     Draw(
       Rect(0, 0, frame_width, frame_height),
@@ -56,13 +56,13 @@ namespace ppx
     );
   }
 
-  void TextureMap::Draw(const Rect &region, const Rect &dest, const int transform, const int rotation, const Vec2 &origin)
+  void TextureMap::Draw(const Rect &region, const Rect &dest, const int transform, const int rotation, const Vec2 &origin) const
   {
     // TODO: clamp region if bigger than frame
     Rect region_out = (rotated)
       ? Rect(
         (frame_width == region.width)
-          ? frame_x + region.y
+          ? frame_x + region.y - 1
           : frame_x + frame_height - region.height - region.y,
         frame_y + region.x,
         region.height,
@@ -124,7 +124,7 @@ namespace ppx
 
       glTranslatef32(dest.x.toInt(), dest.y.toInt(), 0);
       if (rotation != 0) glRotateZi(degreesToAngle(rotation));
-      glTranslatef32(-origin.x.toInt(), -origin.y.toInt(), 0);
+      glTranslatef32(-origin.x.toInt() + offset_x, -origin.y.toInt() + offset_y, 0);
 
       // top left
       glTexCoord2i(tex_coord[tex_index[0]].x.toInt(), tex_coord[tex_index[0]].y.toInt());

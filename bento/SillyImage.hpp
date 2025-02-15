@@ -24,7 +24,7 @@ namespace ppx
     uint64_t header;
     uint8_t version;
     uint8_t format;
-    uint8_t paletteId;
+    uint8_t paletteid;
     uint16_t width;
     uint16_t height;
     uint8_t compression;
@@ -38,11 +38,11 @@ namespace ppx
     uint8_t *data = nullptr;
     uint16_t width = 0;
     uint16_t height = 0;
-    uint8_t paletteId = 0;
+    uint8_t paletteid = 0;
     ImageType format = ImageType_INVALID;
 
     constexpr SillyImage()
-      : data(nullptr), width(0), height(0), paletteId(0), format(ImageType_INVALID), originaldata() { }
+      : data(nullptr), width(0), height(0), paletteid(0), format(ImageType_INVALID), originaldata() { }
 
     SillyImage(const char *filename);
 

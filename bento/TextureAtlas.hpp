@@ -2,28 +2,30 @@
 
 #include "Texture.hpp"
 #include "TextureMap.hpp"
+#include <cstdint>
 #include <cstdio>
 
 namespace ppx
 {
+  struct TextureAtlasItem
+  {
+    Texture *texture = nullptr;
+    TextureMap *images = nullptr;
+    uint16_t length = 0;
+  };
+
   class TextureAtlas
   {
   public:
-    Texture *texture;
-    TextureMap **map;
+    TextureAtlasItem *items = nullptr;
+    uint8_t length = 0;
 
-    int numTexture;
-    int16_t *numMap;
-
-    constexpr TextureAtlas() : texture(nullptr), map(nullptr), numTexture(0), numMap(0) {}
+    constexpr TextureAtlas() : items(nullptr), length(0) {}
     TextureAtlas(const char* filename);
 
-    int Load(const char* filename);
+    bool Load(const char* filename);
     void Unload();
     bool isValid();
     TextureMap *operator[](const char *name);
-
-  private:
-    void readString(FILE *file, char *buffer);
   };
 }

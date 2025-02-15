@@ -21,13 +21,14 @@ namespace ppx
 
     Texture(const SillyImage &image);
     Texture(const char *filename);
+    virtual ~Texture() { }
 
-    int Load(const SillyImage &image);
-    int Load(const char *filename);
+    bool Load(const SillyImage &image);
+    bool Load(const char *filename);
     virtual void Unload();
     virtual bool isValid();
 
-    virtual void Draw(const Vec2 &position, const int transform) const;
+    virtual void Draw(const Vec2 &position, const int transform = 0) const;
     virtual void Draw(const Vec2 &position, const int transform, const int rotation, const Vec2 &scale, const Vec2 origin) const;
     virtual void Draw(const Rect &region, const Rect &dest, const int transform, const int rotation, const Vec2 &origin) const;
   };

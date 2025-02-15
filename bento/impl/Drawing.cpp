@@ -1,6 +1,7 @@
 #include "../Drawing.hpp"
 #include "../Color.hpp"
 #include "../Palette.hpp"
+#include "bento/Tracelog.hpp"
 #include "gl2d.h"
 #include <vector>
 
@@ -8,17 +9,12 @@ s32 _depth = 0;
 
 namespace ppx
 {
-  extern std::vector<Palette> PaletteList;
-
   void InitDrawing()
   {
     glScreen2D();
-
-    for (auto it = PaletteList.begin(); it != PaletteList.end(); ++it)
-      glDeleteTextures(1, &it->texid);
-
-    PaletteList.clear();
-    PaletteList.reserve(10);
+    SetColor(Color::White());
+    Palette::Reset();
+    glResetTextures();
   }
 
   void ClearBackground(const Color &color)
