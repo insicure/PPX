@@ -1,40 +1,48 @@
 #include "../App.hpp"
+#include <cassert>
 
 namespace ppx {
 
-  void App::CreateWindow(const int w, const int h, const char *str)
-  {
-    
+  App& App::Get() {
+    static App instance;
+    return instance;
   }
 
   void App::AppUpdate()
   {
-    if (_currentScene != nullptr)
-    {
-      while (!_currentScene->_preloaded)
-      {
-        _currentScene->_preloaded = true;
-        _currentScene->Preload();
-      }
+    _process_update();
 
-      _currentScene->Update();
-    }
+    if (_ptr_scene_current)
+      _ptr_scene_current->Update();
   }
   
   void App::SetScene(Scene* scene)
   {
-    if (_currentScene != nullptr)
-    {
-      delete _currentScene;
-      _currentScene = nullptr;
-    }
-
-    _currentScene = scene;
+    assert(scene != nullptr);
+    _ptr_scene_next = scene;
   }
 
   Scene* App::GetScene()
   {
-    return _currentScene;
+    return _ptr_scene_current;
+  }
+
+  void App::_process_update()
+  {
+    if (!_ptr_scene_next) return;
+
+    if (_ptr_scene_current) {
+      delete _ptr_scene_current;
+      _ptr_scene_current = nullptr;
+    }
+
+    _ptr_scene_current = _ptr_scene_next;
+    _ptr_scene_next = nullptr;
+
+    _ptr_scene_current->Preload();
+
+    // handle recursive SetScene() during preload
+    if (_ptr_scene_next) _process_update();
   }
   
 }

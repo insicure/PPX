@@ -6,13 +6,20 @@ namespace ppx
 {
   class App {
   public:
-    void CreateWindow(const int w, const int h, const char *str);
+    static App& Get();
 
     void AppUpdate();
     void SetScene(Scene* scene);
     Scene* GetScene();
 
   private:
-    Scene* _currentScene = nullptr;
+    Scene* _ptr_scene_current = nullptr;
+    Scene* _ptr_scene_next = nullptr;
+
+    App() = default;
+    App(const App&) = delete;
+    App& operator=(const App&) = delete;
+
+    void _process_update();
   };
 }
