@@ -12,7 +12,7 @@ namespace ppx {
     constexpr f32(int value)     : value(intToFixed(value, 12)) { }
     constexpr f32(float value)   : value(floatToFixed(value, 12)) { }
 
-    static inline f32 Raw(int value)
+    static constexpr f32 Raw(int value)
     {
       f32 out;
       out.value = value;
@@ -74,10 +74,10 @@ namespace ppx {
   static inline f32 operator+(const int lhs, const f32 &rhs)   { return f32::Raw(intToFixed(lhs, 12) + rhs.value); }
   static inline f32 operator-(const int lhs, const f32 &rhs)   { return f32::Raw(intToFixed(lhs, 12) - rhs.value); }
 
-  static inline int operator*=(int &lhs, const f32 &rhs)   { return lhs *= rhs.toInt(); }
-  static inline int operator/=(int &lhs, const f32 &rhs)   { return lhs /= rhs.toInt(); }
-  static inline int operator+=(int &lhs, const f32 &rhs)   { return lhs += rhs.toInt(); }
-  static inline int operator-=(int &lhs, const f32 &rhs)   { return lhs -= rhs.toInt(); }
+  static inline int &operator*=(int &lhs, const f32 &rhs)   { return lhs *= rhs.toInt(); }
+  static inline int &operator/=(int &lhs, const f32 &rhs)   { return lhs /= rhs.toInt(); }
+  static inline int &operator+=(int &lhs, const f32 &rhs)   { return lhs += rhs.toInt(); }
+  static inline int &operator-=(int &lhs, const f32 &rhs)   { return lhs -= rhs.toInt(); }
 
   static inline bool operator==(const int lhs, const f32 &rhs) { return intToFixed(lhs, 12) == rhs.value; }
   static inline bool operator!=(const int lhs, const f32 &rhs) { return intToFixed(lhs, 12) != rhs.value; }
@@ -110,10 +110,10 @@ namespace ppx {
   static inline f32 operator+(const float lhs, const f32 &rhs)     { return f32::Raw(floatToFixed(lhs, 12) + rhs.value); }
   static inline f32 operator-(const float lhs, const f32 &rhs)     { return f32::Raw(floatToFixed(lhs, 12) - rhs.value); }
 
-  static inline float operator*=(float &lhs, const f32 &rhs)       { return lhs *= rhs.toFloat(); }
-  static inline float operator/=(float &lhs, const f32 &rhs)       { return lhs /= rhs.toFloat(); }
-  static inline float operator+=(float &lhs, const f32 &rhs)       { return lhs += rhs.toFloat(); }
-  static inline float operator-=(float &lhs, const f32 &rhs)       { return lhs -= rhs.toFloat(); }
+  static inline float &operator*=(float &lhs, const f32 &rhs)       { return lhs *= rhs.toFloat(); }
+  static inline float &operator/=(float &lhs, const f32 &rhs)       { return lhs /= rhs.toFloat(); }
+  static inline float &operator+=(float &lhs, const f32 &rhs)       { return lhs += rhs.toFloat(); }
+  static inline float &operator-=(float &lhs, const f32 &rhs)       { return lhs -= rhs.toFloat(); }
 
   static inline bool operator==(const float lhs, const f32 &rhs)   { return floatToFixed(lhs, 12) == rhs.value; }
   static inline bool operator!=(const float lhs, const f32 &rhs)   { return floatToFixed(lhs, 12) != rhs.value; }
