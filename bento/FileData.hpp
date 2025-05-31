@@ -14,9 +14,9 @@ namespace ppx {
     constexpr FileData() : data(nullptr), length(0) { }
     FileData(const char *filename);
 
-    virtual bool Load(const char *filename);
-    virtual void Unload();
-    virtual bool isValid();
+    bool Load(const char *filename);
+    void Unload();
+    bool isValid() const;
   };
 
 }

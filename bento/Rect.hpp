@@ -12,16 +12,16 @@ namespace ppx
     f32 width{};
     f32 height{};
 
-    constexpr Rect()                           : x(0), y(0), width(0), height(0) { }
+    constexpr Rect() = default;
     constexpr Rect(f32 x, f32 y, f32 w, f32 h) : x(x), y(y), width(w), height(h) { }
     constexpr Rect(f32 w, f32 h)               : x(0), y(0), width(w), height(h) { }
 
-    inline f32 Left() const   { return x; }
-    inline f32 Right() const  { return x+width; }
-    inline f32 Top() const    { return y; }
-    inline f32 Bottom() const { return y+height; }
+    f32 Left() const   { return x; }
+    f32 Right() const  { return x+width; }
+    f32 Top() const    { return y; }
+    f32 Bottom() const { return y+height; }
 
-    inline Vec2 Min() const   { return Vec2(Left(), Top()); }
-    inline Vec2 Max() const   { return Vec2(Right(), Bottom()); }
+    Vec2 Min() const   { return Vec2(Left(), Top()); }
+    Vec2 Max() const   { return Vec2(Right(), Bottom()); }
   };
 }

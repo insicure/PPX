@@ -8,179 +8,132 @@ namespace ppx
   class Matrix {
   public:
     /* 
-      | m00 m01 m02 |
-      | m10 m11 m12 |
-      | m20 m21 m22 |
-
+      [ m0, m1, m2 ]
+      [ m3, m4, m5 ]
+      [ m6, m7, m8 ]
     */
-    f32 m00{};
-    f32 m10{};
-    f32 m20{};
+    f32 m[9] = {};
 
-    f32 m01{};
-    f32 m11{};
-    f32 m21{};
+    const f32& operator[](int index) const { return m[index]; }
+    f32& operator[](int index) { return m[index]; }
 
-    f32 m02{};
-    f32 m12{};
-    f32 m22{};
+    constexpr Matrix() = default;
 
-    constexpr Matrix() : m00(0), m10(0), m20(0),
-                         m01(0), m11(0), m21(0),
-                         m02(0), m12(0), m22(0) { }
-
-    constexpr Matrix(f32 m00, f32 m01, f32 m02,
-                     f32 m10, f32 m11, f32 m12,
-                     f32 m20, f32 m21, f32 m22)
-                    : m00(m00), m10(m10), m20(m20),
-                      m01(m01), m11(m11), m21(m21),
-                      m02(m02), m12(m12), m22(m22) { }
-
-    constexpr static inline Matrix Zero() { return Matrix(0, 0, 0, 0, 0, 0, 0, 0, 0); }
-    constexpr static inline Matrix One()  { return Matrix(1, 1, 1, 1, 1, 1, 1, 1, 1); }
+    constexpr static Matrix Zero()     { return {0, 0, 0, 0, 0, 0, 0, 0, 0}; }
+    constexpr static Matrix One()      { return {1, 1, 1, 1, 1, 1, 1, 1, 1}; }
+    constexpr static Matrix Identity() { return {1, 0, 0, 0, 1, 0, 0, 0, 1}; }
     
-    constexpr static inline Matrix Identity()                               { return Matrix(1, 0, 0, 0, 1, 0, 0, 0, 1); }
-    constexpr static inline Matrix Translation(const f32 &x, const f32 &y)  { return Matrix(1, 0, x, 0, 1, y, 0, 0, 1); }
-    constexpr static inline Matrix Reflection(const bool x, const bool y)   { return Matrix((y) ? -1 : 1, 0, 0, 0, (x) ? -1 : 1, 0, 0, 0, 1); }
-    constexpr static inline Matrix Scale(const f32 &x, const f32 &y)        { return Matrix(x, 0, 0, 0, y, 0, 0, 0, 1); }
-    static inline Matrix Rotation(const int degree)               { return Matrix(math::cos(degree), -math::sin(degree), 0, math::sin(degree), math::cos(degree), 0, 0, 0, 1); }
-
-    static inline f32 Determinate(const Matrix &m)
+    static Matrix Translation(f32 x, f32 y) { return {1, 0, x, 0, 1, y, 0, 0, 1}; }
+    static Matrix Scale(f32 x, f32 y)       { return {x, 0, 0, 0, y, 0, 0, 0, 1}; }
+    static  Matrix Rotation(int degree)
     {
-      f32 v1 = m.m00 * (m.m22*m.m11 - m.m21*m.m12);
-      f32 v2 = m.m10 * (m.m22*m.m01 - m.m21*m.m02);
-      f32 v3 = m.m20 * (m.m12*m.m01 - m.m11*m.m02);
-      return v1-v2+v3; 
+      f32 cos = math::cos(degree);
+      f32 sin = math::cos(degree);
+      return {cos, -sin, 0, sin, cos, 0, 0, 0, 1};
     }
 
-    static inline Matrix Inverse(const Matrix &m)
+    static Matrix Inverse(const Matrix &m)
     {
-      Matrix out;
+      f32 det = m[0]*(m[4]*m[8] - m[5]*m[7]) -
+                m[1]*(m[3]*m[8] - m[5]*m[6]) +
+                m[2]*(m[3]*m[7] - m[4]*m[6]);
 
-      out.m00 = m.m22*m.m11 - m.m21*m.m12;
-      out.m01 = m.m21*m.m02 - m.m22*m.m01;
-      out.m02 = m.m12*m.m01 - m.m11*m.m02;
-      out.m10 = m.m20*m.m12 - m.m22*m.m10;
-      out.m11 = m.m22*m.m00 - m.m20*m.m02;
-      out.m12 = m.m10*m.m02 - m.m12*m.m00;
-      out.m20 = m.m21*m.m10 - m.m20*m.m11;
-      out.m21 = m.m20*m.m01 - m.m21*m.m00;
-      out.m22 = m.m11*m.m00 - m.m10*m.m01;
+      
+      constexpr int epsilon = 1 << 6;
+      if (math::abs(det).value <= epsilon) return Matrix::Identity();
+                
+      f32 inv_det = (1 / det);
 
-      return out * (1 / Determinate(m));
+      return {
+        inv_det * (m[4]*m[8] - m[5]*m[7]), 
+        inv_det * (m[2]*m[7] - m[1]*m[8]),
+        inv_det * (m[1]*m[5] - m[2]*m[4]),
+
+        inv_det * (m[5]*m[6] - m[3]*m[8]),
+        inv_det * (m[0]*m[8] - m[2]*m[6]),
+        inv_det * (m[2]*m[3] - m[0]*m[5]),
+
+        inv_det * (m[3]*m[7] - m[4]*m[6]),
+        inv_det * (m[1]*m[6] - m[0]*m[7]),
+        inv_det * (m[0]*m[4] - m[1]*m[3])
+      };
     }
 
-    inline Matrix operator*(const f32 &rhs) const
-    {
-      return Matrix(
-        m00*rhs, m01*rhs, m02*rhs,
-        m10*rhs, m11*rhs, m12*rhs,
-        m20*rhs, m21*rhs, m22*rhs
-      );
+    Matrix operator*(const Matrix& rhs) const {
+      return {
+        m[0]*rhs[0] + m[1]*rhs[3] + m[2]*rhs[6],
+        m[0]*rhs[1] + m[1]*rhs[4] + m[2]*rhs[7],
+        m[0]*rhs[2] + m[1]*rhs[5] + m[2]*rhs[8],
+
+        m[3]*rhs[0] + m[4]*rhs[3] + m[5]*rhs[6],
+        m[3]*rhs[1] + m[4]*rhs[4] + m[5]*rhs[7],
+        m[3]*rhs[2] + m[4]*rhs[5] + m[5]*rhs[8],
+
+        m[6]*rhs[0] + m[7]*rhs[3] + m[8]*rhs[6],
+        m[6]*rhs[1] + m[7]*rhs[4] + m[8]*rhs[7],
+        m[6]*rhs[2] + m[7]*rhs[5] + m[8]*rhs[8]
+      };
     }
 
-    inline Matrix operator/(const f32 &rhs) const
-    {
-      return Matrix(
-        m00/rhs, m01/rhs, m02/rhs,
-        m10/rhs, m11/rhs, m12/rhs,
-        m20/rhs, m21/rhs, m22/rhs
-      );
-    }
+    // ---
 
-    inline Matrix operator+(const f32 &rhs) const
-    {
-      return Matrix(
-        m00+rhs, m01+rhs, m02+rhs,
-        m10+rhs, m11+rhs, m12+rhs,
-        m20+rhs, m21+rhs, m22+rhs
-      );
-    }
-
-    inline Matrix operator-(const f32 &rhs) const
-    {
-      return Matrix(
-        m00-rhs, m01-rhs, m02-rhs,
-        m10-rhs, m11-rhs, m12-rhs,
-        m20-rhs, m21-rhs, m22-rhs
-      );
-    }
-
-    inline Matrix operator*(const Matrix &rhs) const
-    {
-      return Matrix(
-        m00*rhs.m00 + m01*rhs.m10 + m02*rhs.m20,
-        m00*rhs.m01 + m01*rhs.m11 + m02*rhs.m21,
-        m00*rhs.m02 + m01*rhs.m12 + m02*rhs.m22,
-        m10*rhs.m00 + m11*rhs.m10 + m12*rhs.m20,
-        m10*rhs.m01 + m11*rhs.m11 + m12*rhs.m21,
-        m10*rhs.m02 + m11*rhs.m12 + m12*rhs.m22,
-        m20*rhs.m00 + m21*rhs.m10 + m22*rhs.m20,
-        m20*rhs.m01 + m21*rhs.m11 + m22*rhs.m21,
-        m20*rhs.m02 + m21*rhs.m12 + m22*rhs.m22
-      );
-    }
-
-    inline Matrix operator+(const Matrix &rhs) const
-    {
-      return Matrix(
-        m00+rhs.m00, m01+rhs.m01, m02+rhs.m02,
-        m10+rhs.m10, m11+rhs.m11, m12+rhs.m12,
-        m20+rhs.m20, m21+rhs.m21, m22+rhs.m22
-      );
-    }
-
-    inline Matrix operator-(const Matrix &rhs) const
-    {
-      return Matrix(
-        m00-rhs.m00, m01-rhs.m01, m02-rhs.m02,
-        m10-rhs.m10, m11-rhs.m11, m12-rhs.m12,
-        m20-rhs.m20, m21-rhs.m21, m22-rhs.m22
-      );
-    }
-
-    inline Matrix &operator*=(const Matrix &rhs)
-    {
-      m00 = m00*rhs.m00 + m01*rhs.m10 + m02*rhs.m20;
-      m01 = m00*rhs.m01 + m01*rhs.m11 + m02*rhs.m21;
-      m02 = m00*rhs.m02 + m01*rhs.m12 + m02*rhs.m22;
-      m10 = m10*rhs.m00 + m11*rhs.m10 + m12*rhs.m20;
-      m11 = m10*rhs.m01 + m11*rhs.m11 + m12*rhs.m21;
-      m12 = m10*rhs.m02 + m11*rhs.m12 + m12*rhs.m22;
-      m20 = m20*rhs.m00 + m21*rhs.m10 + m22*rhs.m20;
-      m21 = m20*rhs.m01 + m21*rhs.m11 + m22*rhs.m21;
-      m22 = m20*rhs.m02 + m21*rhs.m12 + m22*rhs.m22;
+    Matrix &operator+=(const Matrix &rhs) {
+      for (int i=0; i<9; i++) m[i] += rhs.m[i];
       return *this;
     }
 
-    inline Matrix &operator+=(const Matrix &rhs)
-    {
-      m00 += rhs.m00; m01 += rhs.m01; m02 += rhs.m02;
-      m10 += rhs.m10; m11 += rhs.m11; m12 += rhs.m12;
-      m20 += rhs.m20; m21 += rhs.m21; m22 += rhs.m22;
+    Matrix &operator-=(const Matrix &rhs) {
+      for (int i=0; i<9; i++) m[i] -= rhs.m[i];
       return *this;
     }
 
-    inline Matrix &operator-=(const Matrix &rhs)
-    {
-      m00 -= rhs.m00; m01 -= rhs.m01; m02 -= rhs.m02;
-      m10 -= rhs.m10; m11 -= rhs.m11; m12 -= rhs.m12;
-      m20 -= rhs.m20; m21 -= rhs.m21; m22 -= rhs.m22;
+    Matrix &operator*=(const Matrix &rhs) {
+      *this = *this * rhs;
       return *this;
     }
 
-    inline bool operator==(const Matrix &rhs)
-    {
-      return (m00 == rhs.m00) && (m01 == rhs.m01) && (m02 == rhs.m02) &&
-             (m10 == rhs.m10) && (m11 == rhs.m11) && (m12 == rhs.m12) &&
-             (m20 == rhs.m20) && (m21 == rhs.m21) && (m22 == rhs.m22);
+    Matrix &operator*=(f32 scalar) {
+      for (int i=0; i<9; i++) m[i] *= scalar;
+      return *this;
     }
 
-    inline bool operator!=(const Matrix &rhs)
+    Matrix &operator/=(f32 scalar) {
+      for (int i=0; i<9; i++) m[i] /= scalar;
+      return *this;
+    }
+
+    // ---
+
+    Matrix operator+(const Matrix &rhs) const {
+      Matrix result = *this;
+      return result += rhs;
+    }
+
+    Matrix operator-(const Matrix &rhs) const {
+      Matrix result = *this;
+      return result -= rhs;
+    }
+
+    Matrix operator*(f32 scalar) const {
+      Matrix result = *this;
+      return result *= scalar;
+    }
+
+    Matrix operator/(f32 scalar) const {
+      Matrix result = *this;
+      return result /= scalar;
+    }
+
+    bool operator==(const Matrix &rhs)
     {
-      return (m00 != rhs.m00) && (m01 != rhs.m01) && (m02 != rhs.m02) &&
-             (m10 != rhs.m10) && (m11 != rhs.m11) && (m12 != rhs.m12) &&
-             (m20 != rhs.m20) && (m21 != rhs.m21) && (m22 != rhs.m22);
+      for (int i=0; i<9; i++)
+        if (m[i] != rhs[i]) return false;
+      return true;
+    }
+
+    bool operator!=(const Matrix &rhs)
+    {
+      return !(*this == rhs);
     }
   };
 }

@@ -7,14 +7,14 @@ namespace ppx
 {
   namespace math
   {
-    inline f32 abs(const f32 &value)  { return (value < 0) ? -value : value; }
+    inline f32 abs(f32 value)  { return (value < 0) ? -value : value; }
     inline int mod(const int num, const int den) { return mod32(num, den); }
 
-    inline f32 cos(const int degrees) { return f32::Raw(cosLerp(degreesToAngle(degrees))); }
-    inline f32 sin(const int degrees) { return f32::Raw(sinLerp(degreesToAngle(degrees))); }
-    inline f32 tan(const int degrees) { return f32::Raw(tanLerp(degreesToAngle(degrees))); }
+    inline f32 cos(int degrees) { return f32::Raw(cosLerp(degreesToAngle(degrees))); }
+    inline f32 sin(int degrees) { return f32::Raw(sinLerp(degreesToAngle(degrees))); }
+    inline f32 tan(int degrees) { return f32::Raw(tanLerp(degreesToAngle(degrees))); }
 
-    inline f32 sqrt(const f32 &value) { return f32::Raw(sqrtf32(value.value)); }
+    inline f32 sqrt(f32 value) { return f32::Raw(sqrtf32(value.value)); }
 
     inline f32 distance(const Vec2 &p1, const Vec2 &p2)
     {
