@@ -6,11 +6,6 @@
 
 namespace ppx
 {
-  
-  #define TRANS_NONE    0x00
-  #define TRANS_FLIP_X  0x01
-  #define TRANS_FLIP_Y  0x02
-
   class Texture {
   public:
     int id = 0;
@@ -28,8 +23,11 @@ namespace ppx
     virtual void Unload();
     virtual bool isValid();
 
-    virtual void Draw(const Vec2 &position, const int transform = 0) const;
-    virtual void Draw(const Vec2 &position, const int transform, const int rotation, const Vec2 &scale, const Vec2 origin) const;
-    virtual void Draw(const Rect &region, const Rect &dest, const int transform, const int rotation, const Vec2 &origin) const;
+    virtual void Draw(const Vec2 &position, 
+                      const Vec2 &scale = {1, 1},
+                      const Vec2 &origin = {0, 0},
+                      int rotation = 0,
+                      bool flip_x = false, bool flip_y = false,
+                      const Rect &region = {0, 0, -1, -1});
   };
 }
