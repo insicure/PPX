@@ -129,14 +129,14 @@ namespace ppx
   void Texture::Draw(const Vec2 &position, const Vec2 &scale, const Vec2 &origin, int rotation, bool flip_x, bool flip_y, const Rect &region)
   {
     // Default to full texture size if not specified
-    const int region_width = (region.width.value ? region.width.toInt() : width);
-    const int region_height = (region.height.value ? region.height.toInt() : height);
+    const int region_width = ((region.width > 0) ? region.width.toInt() : width);
+    const int region_height = ((region.height > 0) ? region.height.toInt() : height);
 
     glPushMatrix();
     glTranslatef32(position.x.toInt(), position.y.toInt(), 0);
     if (rotation != 0) glRotateZi(degreesToAngle(rotation));
     glTranslatef32(-origin.x.toInt(), -origin.y.toInt(), 0);
-    glScalef32(scale.x.toInt(), scale.y.toInt(), f32(1).value);
+    glScalef32(scale.x.value, scale.y.value, f32(1).value);
 
     glBindTexture(GL_TEXTURE_2D, id);
     glBegin(GL_QUADS);
