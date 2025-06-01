@@ -1,9 +1,7 @@
 #include "../Drawing.hpp"
 #include "../Color.hpp"
 #include "../Palette.hpp"
-#include "bento/Tracelog.hpp"
 #include "gl2d.h"
-#include <vector>
 
 s32 _depth = 0;
 

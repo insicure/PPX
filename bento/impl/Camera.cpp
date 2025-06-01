@@ -1,5 +1,4 @@
 #include "../Camera.hpp"
-#include "../Math.hpp"
 
 namespace ppx
 {
@@ -16,14 +15,14 @@ namespace ppx
   {
     Matrix translate = Matrix::Translation(position.x, position.y);
     Matrix m = translate * GetMatrix();
-    return Vec2(m.m02, m.m12);
+    return Vec2(m[2], m[5]);
   }
 
   Vec2 Camera::ScreenToScreen(const Vec2 &position)
   {
     Matrix translate = Matrix::Translation(position.x, position.y);
     Matrix m = translate * Matrix::Inverse(GetMatrix());
-    return Vec2(m.m02, m.m12);
+    return Vec2(m[2], m[5]);
   }
 
   Matrix Camera::GetMatrix()
