@@ -173,7 +173,7 @@ cleanup:
     format = ImageType_INVALID;
   }
 
-  bool SillyImage::isValid()
+  bool SillyImage::isValid() const
   {
     return (data != nullptr || format != ImageType_INVALID);
   }

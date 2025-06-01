@@ -31,7 +31,7 @@ namespace ppx
 
     bool Load(const char *filename);
     void Unload();
-    bool isValid();
+    bool isValid() const;
 
   private:
     uint8_t *temp_compress = nullptr;
