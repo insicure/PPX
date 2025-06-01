@@ -1,31 +1,30 @@
 #include "../Touch.hpp"
 #include "nds/arm9/input.h"
 
-static touchPosition touchtemp;
+static touchPosition s_lastPosition;
 
 namespace ppx
 {
   bool GetTouch(TouchPhase phase, touchPosition &touch)
   {
     touchRead(&touch);
+    const bool touched = (keysHeld() & KEY_TOUCH);
 
     switch (phase){
       case TouchPhase_RELEASE:
-      {
-        // store prev pos because px,py return 0 when KeysUp()
-        if (keysHeld() & KEY_TOUCH) touchtemp = touch;
-        if (keysUp() & KEY_TOUCH)
+        if (!touched && (keysUp() & KEY_TOUCH))
         {
-          touch = touchtemp;
+          touch = s_lastPosition;
           return true;
         }
-        return false;
-      }
-
+        break;
+      
       case TouchPhase_DOWN: return (keysDown() & KEY_TOUCH);
-      case TouchPhase_HELD: return (keysDown() & KEY_TOUCH);
+      case TouchPhase_HELD: return touched;
     }
-
+    
+    // store prev pos because px,py return 0 when KeysUp()
+    s_lastPosition = touch;
     return false;
   }
 }
