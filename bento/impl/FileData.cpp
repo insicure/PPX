@@ -19,68 +19,82 @@ namespace ppx
   {
     if (isValid()) Unload();
 
-    FILE *file = nullptr;
-    bool res = false;
+    FILE *ptr_file = nullptr;
+    uint8_t *temp_buffer = nullptr;
+    size_t bytes_read;
+    size_t file_size = 0;
+    bool success = false;
 
-    do
-    {
-
-      // check filename
-      const bool cond = (filename != nullptr || strlen(filename) != 0);
-      res_sassert(res, cond, "FileData: empty filename");
-      if (!res) break;
-
-      // fopen
-      file = fopen(filename, "rb");
-      res_sassert(res, file != nullptr, "FileData: fopen failed, %s", filename);
-      if (!res) break;
-
-      // get length
-      fseek(file, 0, SEEK_END);
-      length = ftell(file);
-      fseek(file, 0, SEEK_SET);
-
-      // check length
-      res_sassert(res, length > 0, "FileData: length < 0, %s", filename);
-      if (!res) break;
-
-      // allocate memory
-      data = (uint8_t*)malloc(length * sizeof(uint8_t));
-      res_sassert(res, data != nullptr, "FileData: malloc failed, %s", filename);
-      if (!res) break;
-
-      // read
-      size_t count = fread(data, sizeof(uint8_t), length, file);
-      res_sassert(res, count == length, "FileData: partially loaded, %s", filename);
-      if (!res) break;
-
-    } while(0);
-
-    if (file) fclose(file);
-    if (!res)
-    {
-      TraceLog("FileData: load failed, %s", filename);
-      Unload();
+    // Validate filename
+    if (filename == nullptr || filename[0] == '\0') {
+      TraceLog("FileData: empty filename");
+      goto cleanup;
     }
-    else TraceLog("FileData: load success, %s", filename);
+      
+    // Open file
+    ptr_file = fopen(filename, "rb");
+    if (!ptr_file) {
+      TraceLog("FileData: fopen failed, %s", filename);
+      goto cleanup;
+    }
 
-    return res;
-    fclose(file);
+    // Get file size
+    if (fseek(ptr_file, 0, SEEK_END) != 0) {
+      TraceLog("FileData: fseek(END) failed, %s", filename);
+      goto cleanup;
+    }
+    
+    file_size = ftell(ptr_file);
+    if (file_size < 0) {
+      TraceLog("FileData: ftell failed, %s", filename);
+      goto cleanup;
+    }
+    
+    rewind(ptr_file);
+
+    // Validate file size
+    if (file_size == 0) {
+      TraceLog("FileData: empty file, %s", filename);
+      goto cleanup;
+    }
+
+    // Allocate buffer
+    temp_buffer = static_cast<uint8_t*>(malloc(file_size));
+    if (!temp_buffer) {
+      TraceLog("FileData: malloc failed, %s", filename);
+      goto cleanup;
+    }
+
+    // Read file
+    bytes_read = fread(temp_buffer, 1, file_size, ptr_file);
+    if (bytes_read != file_size) {
+      TraceLog("FileData: partially loaded %zu/%zu, %s", bytes_read, file_size, filename);
+      goto cleanup;
+    }
+
+    // Success
+    data = temp_buffer;
+    length = file_size;
+    success = true;
+    TraceLog("FileData: load success, %s", filename);
+
+cleanup:
+    if (ptr_file) fclose(ptr_file);
+    if (!success) {
+      if (temp_buffer) free(temp_buffer);
+      TraceLog("FileData: load failed, %s", filename);
+    }
+    return success;
   }
 
   void FileData::Unload()
   {
-    if (isValid()) 
-    {
-      free(data);
-      // TraceLog("FileData: unloaded");
-    }
-
+    if (data) free(data);
     data = nullptr;
     length = 0;
   }
 
-  bool FileData::isValid()
+  bool FileData::isValid() const
   {
     return (data != nullptr);
   }
