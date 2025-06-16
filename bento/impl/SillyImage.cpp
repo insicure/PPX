@@ -1,10 +1,12 @@
 #include "../SillyImage.hpp"
 #include "bento/Tracelog.hpp"
 #include "fastlz.h"
+#include <cstdint>
 #include <cstdio>
 #include <cstdlib>
 
 #define SILLYIMAGE_HEADER 7452728928599042419
+#define SILLYIMAGE_VERSION 14
 
 namespace ppx
 {
@@ -45,19 +47,19 @@ namespace ppx
     }
 
     // Verify version
-    uint8_t version;
+    int8_t version;
     if (fread(&version, sizeof(version), 1, ptr_file) != 1) {
       TraceLog("SillyImage: Failed read version: %s", filename);
       goto cleanup;
     }
 
-    if (version != 13) {
+    if (version != SILLYIMAGE_VERSION) {
       TraceLog("SillyImage: Unsupported version: %s", filename);
       goto cleanup;
     }
 
     // Verify format
-    uint8_t raw_format;
+    int8_t raw_format;
     if (fread(&raw_format, sizeof(raw_format), 1, ptr_file) != 1) {
       TraceLog("SillyImage: Failed read format: %s", filename);
       goto cleanup;
@@ -79,6 +81,31 @@ namespace ppx
       case 7: format = ImageType_PALETTE_16; break;
     }
 
+    
+    int8_t isBE;
+    if (fread(&isBE, sizeof(isBE), 1, ptr_file) != 1) {
+      TraceLog("SillyImage: Failed read big endian mode: %s", filename);
+      goto cleanup;
+    }
+    
+    if (isBE != 0)
+    {
+      TraceLog("SillyImage: big endian mode not supported: %s", filename);
+      goto cleanup;
+    }
+    
+    int8_t palette_format;
+    if (fread(&palette_format, sizeof(palette_format), 1, ptr_file) != 1) {
+      TraceLog("SillyImage: Failed read palette_format: %s", filename);
+      goto cleanup;
+    }
+
+    if (palette_format != 1)
+    {
+      TraceLog("SillyImage: only rgb16 palette_format supported: %s", filename);
+      goto cleanup;
+    }
+
     // Read dimensions
     if (fread(&width, sizeof(width), 1, ptr_file) != 1) {
       TraceLog("SillyImage: Failed read width: %s", filename);
@@ -93,11 +120,6 @@ namespace ppx
     // Read palette
     if (fread(&palette_count, sizeof(palette_count), 1, ptr_file) != 1) {
       TraceLog("SillyImage: Failed read palette_count: %s", filename);
-      goto cleanup;
-    }
-
-    if (fread(&palette_hash, sizeof(palette_hash), 1, ptr_file) != 1) {
-      TraceLog("SillyImage: Failed read palette_hash: %s", filename);
       goto cleanup;
     }
 
@@ -169,7 +191,6 @@ cleanup:
 
     width = height = 0;
     palette_count = 0;
-    palette_hash = 0;
     format = ImageType_INVALID;
   }
 

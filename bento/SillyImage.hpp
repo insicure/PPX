@@ -22,12 +22,11 @@ namespace ppx
   {
   public:
     uint8_t *data = nullptr;
-    uint16_t width = 0;
-    uint16_t height = 0;
-    uint16_t palette_count = 0;
-    uint32_t palette_hash = 0;
+    int16_t width = 0;
+    int16_t height = 0;
+    int16_t palette_count = 0;
     uint8_t *palette_data = nullptr;
-    uint8_t format = ImageType_INVALID;
+    int8_t format = ImageType_INVALID;
 
     bool Load(const char *filename);
     void Unload();
