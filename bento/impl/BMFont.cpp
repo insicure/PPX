@@ -27,6 +27,35 @@ struct CommonBlock {
 };
 #pragma pack(pop)
 
+static char* build_path_from_base(const char* filepath, const char* filename) {
+  // Get base directory from filepath
+  const char* last_slash = strrchr(filepath, '/');
+  if (!last_slash) last_slash = strrchr(filepath, '\\');
+  size_t base_len = last_slash ? (last_slash - filepath + 1) : 0;
+
+  // Find filename extension
+  const char* ext = strrchr(filename, '.');
+  const char* last_fn_slash = strrchr(filename, '/');
+  if (!last_fn_slash) last_fn_slash = strrchr(filename, '\\');
+
+  size_t name_len;
+  if (ext && (!last_fn_slash || ext > last_fn_slash)) {
+      name_len = ext - filename; // Length without extension
+  } else {
+      name_len = strlen(filename); // No extension found
+  }
+
+  // Allocate and build new path
+  char* new_path = (char*)malloc(base_len + name_len + strlen(".sillyimg") + 1);
+  if (!new_path) return NULL;
+
+  if (base_len) memcpy(new_path, filepath, base_len);
+  memcpy(new_path + base_len, filename, name_len);
+  strcpy(new_path + base_len + name_len, ".sillyimg");
+
+  return new_path;
+}
+
 namespace ppx
 {
   bool BMFont::Load(const char * filename)
@@ -35,8 +64,8 @@ namespace ppx
     bool success = false;
     BlockHeader block_header;
     void* block_data = nullptr;
-    char* pending = nullptr;
-    uint32_t pending_size = 0;
+    char* pending_imgpath = nullptr;
+    char* pending_basepath = nullptr;
 
     // Validate filename
     if (filename == nullptr || filename[0] == '\0')
@@ -80,13 +109,12 @@ namespace ppx
         case 3:
         { // Pages block
           // Free any previous pending data
-          if (pending) free(pending);
+          if (pending_imgpath) free(pending_imgpath);
 
           // Copy entire pages block to pending storage
           // handle later incase pages block come before common block
-          pending = static_cast<char*>(malloc(block_header.size));
-          memcpy(pending, block_data, block_header.size);
-          pending_size = block_header.size;
+          pending_imgpath = static_cast<char*>(malloc(block_header.size));
+          memcpy(pending_imgpath, block_data, block_header.size);
           break;
         }
 
@@ -108,14 +136,15 @@ namespace ppx
       }
 
       free(block_data);
+      block_data = nullptr;
     }
 
     // Process pending pages (must be done after Common block)
-    if (pending) {
+    if (pending_imgpath) {
       // Allocate memory for texture pointers
       pageTextures = new Texture[pages];
 
-      char* ptr = pending;
+      char* ptr = pending_imgpath;
 
       for (uint16_t i=0; i<pages; i++) {
         size_t len = strlen(ptr);
@@ -126,12 +155,17 @@ namespace ppx
           goto cleanup;
         }
 
-        if (!pageTextures[i].Load(ptr))
+        pending_basepath = build_path_from_base(filename, ptr);
+
+        if (!pageTextures[i].Load(pending_basepath))
         {
-          TraceLog("BMFont: failed to load texture %s", ptr);
+          TraceLog("BMFont: failed to load texture %s", pending_basepath);
           goto cleanup;
         }
 
+        free(pending_basepath);
+        pending_basepath = nullptr;
+        
         ptr += len + 1;
       }
     }
@@ -144,7 +178,8 @@ cleanup:
 
     if (file) fclose(file);
     if (block_data) free(block_data);
-    if (pending) free(pending);
+    if (pending_imgpath) free(pending_imgpath);
+    if (pending_basepath) free(pending_basepath);
 
     return success;
   }
