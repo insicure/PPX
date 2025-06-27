@@ -1,3 +1,4 @@
+#include "bento/Color.hpp"
 #include "bento/Texture.hpp"
 #include <cstdint>
 
@@ -6,6 +7,8 @@ namespace ppx
   class BMFont
   {
   public:
+    enum Alignment { ALIGN_LEFT, ALIGN_CENTER, ALIGN_RIGHT };
+
     struct Char
     {
       uint32_t id = 0;
@@ -28,6 +31,7 @@ namespace ppx
 
     // Common block data
     uint16_t lineHeight;
+    int16_t fontSize;
     uint16_t base;
     uint16_t pages;
 
@@ -43,5 +47,12 @@ namespace ppx
     bool Load(const char* filename);
     void Unload();
     bool isValid() const;
+
+    const Char* GetChar(uint32_t id) const;
+    int16_t GetKerning(uint32_t first, uint32_t second) const;
+
+    uint32_t EncodeUTF8(const char *text, int &byteSize);
+    void DrawString(const char* text, const Vec2 position, int max_width = 0, int max_height = 0, const Color tint = 0xffffff);
+    void DrawGlyph(const Char* glyph, const Vec2 position, const Color tint = 0xffffff);
   };
 }
