@@ -17,7 +17,7 @@ namespace ppx
     return (id > 0) && (width > 0) && (height > 0) && (hash != 0);
   }
 
-  void TextureMap::Draw(const Vec2 &position, const Vec2 &scale,const Vec2 &origin,int rotation,bool flip_x, bool flip_y,const Rect &region)
+  void TextureMap::Draw(const Vec2 &position, const Vec2 &scale,const Vec2 &origin,int rotation,bool flip_x, bool flip_y,const Rect &region, const Color tint)
   {
     // TODO: region crop might not working, not thoroughly tested!
     // Default to full texture frame size if not specified
@@ -59,6 +59,7 @@ namespace ppx
     glBindTexture(GL_TEXTURE_2D, id);
     glBegin(GL_QUADS);
     {
+      glColor(tint.ToRGB15());
       glTexCoord2i(texcoords[0][0], texcoords[0][1]); glVertex3v16(0, 0, _depth);
       glTexCoord2i(texcoords[1][0], texcoords[1][1]); glVertex2v16(region_width, 0);
       glTexCoord2i(texcoords[2][0], texcoords[2][1]); glVertex2v16(region_width, region_height);

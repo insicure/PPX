@@ -27,6 +27,7 @@ namespace ppx
                       const Vec2 &origin = {0, 0},
                       int rotation = 0,
                       bool flip_x = false, bool flip_y = false,
-                      const Rect &region = {0, 0, -1, -1}) override;
+                      const Rect &region = {0, 0, -1, -1},
+                      const Color tint = 0xffffff) override;
   };
 }

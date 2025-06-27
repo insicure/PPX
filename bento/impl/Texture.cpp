@@ -1,5 +1,6 @@
 // most ds opengl-ish ignore a few arguments, this make me easier to spot one
 #include "bento/Texture.hpp"
+#include "bento/Color.hpp"
 #include "bento/SillyImage.hpp"
 #include "bento/Tracelog.hpp"
 #include "nds/arm9/videoGL.h"
@@ -126,7 +127,7 @@ namespace ppx
     return (width > 0) && (height > 0);
   }
 
-  void Texture::Draw(const Vec2 &position, const Vec2 &scale, const Vec2 &origin, int rotation, bool flip_x, bool flip_y, const Rect &region)
+  void Texture::Draw(const Vec2 &position, const Vec2 &scale, const Vec2 &origin, int rotation, bool flip_x, bool flip_y, const Rect &region, const Color tint)
   {
     // Default to full texture size if not specified
     const int region_width = ((region.width > 0) ? region.width.toInt() : width);
@@ -141,6 +142,7 @@ namespace ppx
     glBindTexture(GL_TEXTURE_2D, id);
     glBegin(GL_QUADS);
     {
+      glColor(tint.ToRGB15());
       // Calculate texcoords with flip support
       const int tx1 = (flip_x ? region.x + region_width : region.x).toInt();
       const int tx2 = (flip_x ? region.x : region.x + region_width).toInt();
