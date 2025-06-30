@@ -1,6 +1,5 @@
 #include "../Drawing.hpp"
 #include "../Color.hpp"
-#include "../Palette.hpp"
 #include "gl2d.h"
 
 s32 _depth = 0;
@@ -11,7 +10,6 @@ namespace ppx
   {
     glScreen2D();
     SetColor(Color::White());
-    Palette::Reset();
     glResetTextures();
   }
 
