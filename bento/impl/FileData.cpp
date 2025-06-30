@@ -1,29 +1,16 @@
 #include "../FileData.hpp"
 #include "../Tracelog.hpp"
-#include "../Assert.hpp"
-#include <cstddef>
-#include <cstdint>
-#include <cstdio>
-#include <cstdlib>
-#include <cstring>
+#include "../Memory.hpp"
 
 namespace ppx
 {
-  FileData::FileData(const char *filename)
-    : data(nullptr), length(0)
+  FileData* FileData::Load(const char *filename)
   {
-    Load(filename);
-  }
-
-  bool FileData::Load(const char *filename)
-  {
-    if (isValid()) Unload();
-
+    FileData *ptr_result = nullptr;
     FILE *ptr_file = nullptr;
     uint8_t *temp_buffer = nullptr;
-    size_t bytes_read;
-    size_t file_size = 0;
-    bool success = false;
+    uint32_t bytes_read;
+    uint32_t file_size = 0;
 
     // Validate filename
     if (filename == nullptr || filename[0] == '\0') {
@@ -59,7 +46,7 @@ namespace ppx
     }
 
     // Allocate buffer
-    temp_buffer = static_cast<uint8_t*>(malloc(file_size));
+    temp_buffer = ppx_alloc<uint8_t>(file_size);
     if (!temp_buffer) {
       TraceLog("FileData: malloc failed, %s", filename);
       goto cleanup;
@@ -73,23 +60,26 @@ namespace ppx
     }
 
     // Success
-    data = temp_buffer;
-    length = file_size;
-    success = true;
-    TraceLog("FileData: load success, %s", filename);
+    ptr_result = new(std::nothrow) FileData();
+    if (ptr_result)
+    {
+      ptr_result->data = temp_buffer;
+      ptr_result->length = file_size;
+      TraceLog("FileData: load success, %s", filename);
+    }
 
 cleanup:
     if (ptr_file) fclose(ptr_file);
-    if (!success) {
-      if (temp_buffer) free(temp_buffer);
+    if (!ptr_result && temp_buffer) {
+      ppx_free_array(temp_buffer);
       TraceLog("FileData: load failed, %s", filename);
     }
-    return success;
+    return ptr_result;
   }
 
   void FileData::Unload()
   {
-    if (data) free(data);
+    if (data) ppx_free_array(data);
     data = nullptr;
     length = 0;
   }
