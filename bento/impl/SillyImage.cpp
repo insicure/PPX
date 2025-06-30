@@ -141,7 +141,7 @@ namespace ppx
       goto cleanup;
     }
 
-    if (fread(palette_data, sizeof(uint16_t), palette_count, ptr_file) != palette_count) {
+    if (fread(palette_data, sizeof(uint16_t), palette_count, ptr_file) != static_cast<size_t>(palette_count)) {
       TraceLog("SillyImage: Failed read palette_data: %s", filename);
       goto cleanup;
     }
