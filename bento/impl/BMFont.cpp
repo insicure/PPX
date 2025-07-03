@@ -1,8 +1,10 @@
 #include "../BMFont.hpp"
+#include "bento/Memory.hpp"
 #include "bento/Texture.hpp"
 #include "bento/Tracelog.hpp"
 #include "bento/Vec2.hpp"
 #include <algorithm>
+#include <cstdint>
 #include <cstdlib>
 #include <cstring>
 
@@ -44,45 +46,49 @@ struct InfoBlock {
 };
 #pragma pack(pop)
 
-static char* build_path_from_base(const char* filepath, const char* filename) {
-  // Get base directory from filepath
-  const char* last_slash = strrchr(filepath, '/');
-  if (!last_slash) last_slash = strrchr(filepath, '\\');
-  size_t base_len = last_slash ? (last_slash - filepath + 1) : 0;
-
-  // Find filename extension
-  const char* ext = strrchr(filename, '.');
-  const char* last_fn_slash = strrchr(filename, '/');
-  if (!last_fn_slash) last_fn_slash = strrchr(filename, '\\');
-
-  size_t name_len;
-  if (ext && (!last_fn_slash || ext > last_fn_slash)) {
-      name_len = ext - filename; // Length without extension
-  } else {
-      name_len = strlen(filename); // No extension found
-  }
-
-  // Allocate and build new path
-  char* new_path = (char*)malloc(base_len + name_len + strlen(".sillyimg") + 1);
-  if (!new_path) return NULL;
-
-  if (base_len) memcpy(new_path, filepath, base_len);
-  memcpy(new_path + base_len, filename, name_len);
-  strcpy(new_path + base_len + name_len, ".sillyimg");
-
-  return new_path;
-}
-
 namespace ppx
 {
-  bool BMFont::Load(const char * filename)
+  static char* build_path_from_base(const char* filepath, const char* filename) {
+    // Get base directory from filepath
+    const char* last_slash = strrchr(filepath, '/');
+    if (!last_slash) last_slash = strrchr(filepath, '\\');
+    size_t base_len = last_slash ? (last_slash - filepath + 1) : 0;
+
+    // Find filename extension
+    const char* ext = strrchr(filename, '.');
+    const char* last_fn_slash = strrchr(filename, '/');
+    if (!last_fn_slash) last_fn_slash = strrchr(filename, '\\');
+
+    size_t name_len;
+    if (ext && (!last_fn_slash || ext > last_fn_slash)) {
+        name_len = ext - filename; // Length without extension
+    } else {
+        name_len = strlen(filename); // No extension found
+    }
+
+    // Allocate and build new path
+    char* new_path = ppx_alloc<char>(base_len + name_len + strlen(".sillyimg") + 1);
+    if (!new_path) return NULL;
+
+    if (base_len) memcpy(new_path, filepath, base_len);
+    memcpy(new_path + base_len, filename, name_len);
+    strcpy(new_path + base_len + name_len, ".sillyimg");
+
+    return new_path;
+  }
+  
+  BMFont *BMFont::Load(const char * filename)
   {
-    FILE* file = fopen(filename, "rb");
-    bool success = false;
+    BMFont *ptr_result = nullptr;
+    FILE* ptr_file = fopen(filename, "rb");
     BlockHeader block_header;
-    void* block_data = nullptr;
+    uint8_t* block_data = nullptr;
     char* pending_imgpath = nullptr;
     char* pending_basepath = nullptr;
+    bool success = false;
+
+    ptr_result = ppx_alloc<BMFont>();
+    if (!ptr_result) return nullptr;
 
     // Validate filename
     if (filename == nullptr || filename[0] == '\0')
@@ -92,7 +98,7 @@ namespace ppx
     }
 
     FileHeader header;
-    if (fread(&header, sizeof(header), 1, file) != 1 || 
+    if (fread(&header, sizeof(header), 1, ptr_file) != 1 || 
         memcmp(header.id, "BMF", 3) != 0 ||
         header.version != 3)
     {
@@ -101,14 +107,14 @@ namespace ppx
     }
 
 
-    while (fread(&block_header, sizeof(block_header), 1, file) == 1) {
-      block_data = malloc(block_header.size);
+    while (fread(&block_header, sizeof(block_header), 1, ptr_file) == 1) {
+      block_data = ppx_alloc<uint8_t>(block_header.size);
       if (!block_data) {
-        TraceLog("BMFont: malloc failed for block %d", block_header.type);
+        TraceLog("BMFont: alloc failed for block %d", block_header.type);
         goto cleanup;
       }
 
-      if (fread(block_data, block_header.size, 1, file) != 1) {
+      if (fread(block_data, block_header.size, 1, ptr_file) != 1) {
         TraceLog("BMFont: block read failed, block type %d", block_header.type);
         goto cleanup;
       }
@@ -116,61 +122,60 @@ namespace ppx
       switch (block_header.type) {
         case 1: // Info block
         {
-          auto* info = static_cast<InfoBlock*>(block_data);
-          fontSize = std::abs(info->fontSize);
+          auto* info = reinterpret_cast<InfoBlock*>(block_data);
+          ptr_result->fontSize = std::abs(info->fontSize);
           break;
         }
 
         case 2:
         { // Common block
-          auto *common = static_cast<CommonBlock*>(block_data);
-          lineHeight = common->lineHeight;
-          base = common->base;
-          pages = common->pages;
+          auto *common = reinterpret_cast<CommonBlock*>(block_data);
+          ptr_result->lineHeight = common->lineHeight;
+          ptr_result->base = common->base;
+          ptr_result->pages = common->pages;
           break;
         }
 
         case 3:
         { // Pages block
           // Free any previous pending data
-          if (pending_imgpath) free(pending_imgpath);
+          if (pending_imgpath) ppx_free_array(pending_imgpath);
 
           // Copy entire pages block to pending storage
           // handle later incase pages block come before common block
-          pending_imgpath = static_cast<char*>(malloc(block_header.size));
+          pending_imgpath = ppx_alloc<char>(block_header.size);
           memcpy(pending_imgpath, block_data, block_header.size);
           break;
         }
 
         case 4:
         { // Chars block
-          charCount = block_header.size / sizeof(BMFont::Char);
-          chars = static_cast<BMFont::Char*>(malloc(block_header.size));
-          memcpy(chars, block_data, block_header.size);
+          ptr_result->charCount = block_header.size / sizeof(BMFChar);
+          ptr_result->chars = ppx_alloc<BMFChar>(block_header.size);
+          memcpy(ptr_result->chars, block_data, block_header.size);
           break;
         }
 
         case 5:
         { // Kerning pairs
-          kerningCount = block_header.size / sizeof(BMFont::Kerning);
-          kernings = static_cast<BMFont::Kerning*>(malloc(block_header.size));
-          memcpy(kernings, block_data, block_header.size);
+          ptr_result->kerningCount = block_header.size / sizeof(BMFKerning);
+          ptr_result->kernings = ppx_alloc<BMFKerning>(block_header.size);
+          memcpy(ptr_result->kernings, block_data, block_header.size);
           break;
         }
       }
 
-      free(block_data);
-      block_data = nullptr;
+      ppx_free_array(block_data);
     }
 
     // Process pending pages (must be done after Common block)
     if (pending_imgpath) {
       // Allocate memory for texture pointers
-      pageTextures = new Texture[pages];
+      ptr_result->pageTextures = ppx_alloc<Texture>(ptr_result->pages);
 
       char* ptr = pending_imgpath;
 
-      for (uint16_t i=0; i<pages; i++) {
+      for (uint16_t i=0; i<ptr_result->pages; i++) {
         size_t len = strlen(ptr);
 
         if (len == 0 || len >= 256)
@@ -179,9 +184,10 @@ namespace ppx
           goto cleanup;
         }
 
+        // TODO: handle null
         pending_basepath = build_path_from_base(filename, ptr);
 
-        if (!pageTextures[i].Load(pending_basepath))
+        if (!ptr_result->pageTextures[i].Load(pending_basepath))
         {
           TraceLog("BMFont: failed to load texture %s", pending_basepath);
           goto cleanup;
@@ -198,30 +204,25 @@ namespace ppx
     TraceLog("BMFont: loaded successfully, %s", filename);
 
 cleanup:
-    if (!success) Unload();
+    if (!success) {
+      ptr_result->Unload();
+      ppx_free_object(ptr_result);
+      TraceLog("BMFont: load failed, %s", filename);
+    }
 
-    if (file) fclose(file);
-    if (block_data) free(block_data);
-    if (pending_imgpath) free(pending_imgpath);
-    if (pending_basepath) free(pending_basepath);
+    if (ptr_file) fclose(ptr_file);
+    if (block_data) ppx_free_array(block_data);
+    if (pending_imgpath) ppx_free_array(pending_imgpath);
+    if (pending_basepath) ppx_free_array(pending_basepath);
 
-    return success;
+    return ptr_result;
   }
 
   void BMFont::Unload()
   {
-    if (pageTextures) {
-      delete[] pageTextures;
-      pageTextures = nullptr;
-    }
-    if (chars) {
-      free(chars);
-      chars = nullptr;
-    }
-    if (kernings) {
-      free(kernings);
-      kernings = nullptr;
-    }
+    if (pageTextures) ppx_free_array(pageTextures);
+    if (chars) ppx_free_array(chars);
+    if (kernings) ppx_free_array(kernings);
 
     lineHeight = 0;
     base = 0;
@@ -237,13 +238,13 @@ cleanup:
            pages > 0;
   }
 
-  const BMFont::Char* BMFont::GetChar(uint32_t id) const {
+  const BMFont::BMFChar* BMFont::GetChar(uint32_t id) const {
     if (!chars || charCount == 0) return nullptr;
 
-    const Char* first = chars;
-    const Char* last = chars + charCount;
-    const Char* it = std::lower_bound(first, last, id,
-      [](const Char& ch, uint32_t val) { return ch.id < val; });
+    const BMFChar* first = chars;
+    const BMFChar* last = chars + charCount;
+    const BMFChar* it = std::lower_bound(first, last, id,
+      [](const BMFChar& ch, uint32_t val) { return ch.id < val; });
 
     return (it != last && it->id == id) ? it : nullptr;
   }
@@ -257,10 +258,10 @@ cleanup:
       KerningKey(uint32_t f, uint32_t s) : first(f), second(s) {}
     } key = {first_char, second_char};
 
-    const Kerning* first = kernings;
-    const Kerning* last = kernings + kerningCount;
-    const Kerning* it = std::lower_bound(first, last, key,
-      [](const Kerning& k, const KerningKey& key) {
+    const BMFKerning* first = kernings;
+    const BMFKerning* last = kernings + kerningCount;
+    const BMFKerning* it = std::lower_bound(first, last, key,
+      [](const BMFKerning& k, const KerningKey& key) {
         if (k.first != key.first) return k.first < key.first;
         return k.second < key.second;
       });
@@ -303,7 +304,7 @@ cleanup:
     return 0x3f;
   }
 
-  void BMFont::DrawGlyph(const Char *glyph, const Vec2 position, const Color tint)
+  void BMFont::DrawGlyph(const BMFChar *glyph, const Vec2 position, const Color tint)
   {
     pageTextures[glyph->page].Draw(
       {position.x+glyph->xoffset, position.y+glyph->yoffset},
@@ -313,7 +314,7 @@ cleanup:
     );
   }
 
-  void BMFont::DrawString(const char *text, const Vec2 position, int max_width, int max_height, const Color tint)
+  void BMFont::DrawStringEx(const char *text, const Vec2 position, int max_width, int max_height, const Color tint)
   {
     // Modified from the raylib [text] example - Rectangle bounds
     // https://github.com/raysan5/raylib/blob/bdda18656b301303b711785db48ac311655bb3d9/examples/text/text_rectangle_bounds.c#L143
@@ -337,7 +338,7 @@ cleanup:
       int codepointByteCount = 0;
       uint32_t codepoint = EncodeUTF8(&text[i], codepointByteCount);
 
-      const Char* glyph = GetChar(codepoint);
+      const BMFChar* glyph = GetChar(codepoint);
       if (!glyph) glyph = GetChar(0xFFFD);
       if (!glyph) glyph = GetChar('?');
       if (!glyph) glyph = GetChar(' ');

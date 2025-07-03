@@ -25,14 +25,17 @@ namespace ppx
     int16_t width = 0;
     int16_t height = 0;
     int16_t palette_count = 0;
-    uint8_t *palette_data = nullptr;
+    uint16_t *palette_data = nullptr;
     int8_t format = ImageType_INVALID;
 
-    bool Load(const char *filename);
+    static SillyImage *Load(const char *filename);
+    inline ~SillyImage() { Unload(); }
     void Unload();
     bool isValid() const;
 
   private:
+    SillyImage() = default;
+    SillyImage& operator=(const SillyImage&) = delete;
     uint8_t *temp_compress = nullptr;
   };
 }

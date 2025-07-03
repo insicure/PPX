@@ -8,14 +8,16 @@ namespace ppx
   {
     FileData *ptr_result = nullptr;
     FILE *ptr_file = nullptr;
-    uint8_t *temp_buffer = nullptr;
     uint32_t bytes_read;
-    uint32_t file_size = 0;
+    bool success = false;
+
+    ptr_result = ppx_alloc<FileData>();
+    if (!ptr_result) return nullptr;
 
     // Validate filename
     if (filename == nullptr || filename[0] == '\0') {
       TraceLog("FileData: empty filename");
-      goto cleanup;
+      return nullptr;
     }
       
     // Open file
@@ -31,8 +33,8 @@ namespace ppx
       goto cleanup;
     }
     
-    file_size = ftell(ptr_file);
-    if (file_size < 0) {
+    ptr_result->length = ftell(ptr_file);
+    if (ptr_result->length < 0) {
       TraceLog("FileData: ftell failed, %s", filename);
       goto cleanup;
     }
@@ -40,38 +42,36 @@ namespace ppx
     rewind(ptr_file);
 
     // Validate file size
-    if (file_size == 0) {
+    if (ptr_result->length == 0) {
       TraceLog("FileData: empty file, %s", filename);
       goto cleanup;
     }
 
     // Allocate buffer
-    temp_buffer = ppx_alloc<uint8_t>(file_size);
-    if (!temp_buffer) {
-      TraceLog("FileData: malloc failed, %s", filename);
+    ptr_result->data = ppx_alloc<uint8_t>(ptr_result->length);
+    if (!ptr_result->data) {
+      TraceLog("FileData: alloc failed, %s", filename);
       goto cleanup;
     }
 
     // Read file
-    bytes_read = fread(temp_buffer, 1, file_size, ptr_file);
-    if (bytes_read != file_size) {
-      TraceLog("FileData: partially loaded %zu/%zu, %s", bytes_read, file_size, filename);
+    bytes_read = fread(ptr_result->data, 1, ptr_result->length, ptr_file);
+    if (bytes_read != ptr_result->length) {
+      TraceLog("FileData: partially loaded %zu/%zu, %s", bytes_read, ptr_result->length, filename);
       goto cleanup;
     }
 
     // Success
-    ptr_result = new(std::nothrow) FileData();
-    if (ptr_result)
-    {
-      ptr_result->data = temp_buffer;
-      ptr_result->length = file_size;
-      TraceLog("FileData: load success, %s", filename);
-    }
+    success = true;
+    TraceLog("FileData: load success, %s", filename);
 
 cleanup:
     if (ptr_file) fclose(ptr_file);
-    if (!ptr_result && temp_buffer) {
-      ppx_free_array(temp_buffer);
+
+    if (!success)
+    {
+      ptr_result->Unload();
+      ppx_free_object(ptr_result);
       TraceLog("FileData: load failed, %s", filename);
     }
     return ptr_result;
@@ -80,7 +80,6 @@ cleanup:
   void FileData::Unload()
   {
     if (data) ppx_free_array(data);
-    data = nullptr;
     length = 0;
   }
 

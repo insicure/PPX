@@ -3,7 +3,7 @@
 namespace ppx
 {
 
-  void Camera::Set(const Vec2 &offset, const Vec2 &target, const int16_t rotation, const f32 &zoom)
+  void Camera::Set(const Vec2 offset, const Vec2 target, const int16_t rotation, const f32 zoom)
   {
     this->offset = offset;
     this->target = target;
@@ -11,14 +11,14 @@ namespace ppx
     this->zoom = zoom;
   }
 
-  Vec2 Camera::CameraToScreen(const Vec2 &position)
+  Vec2 Camera::CameraToScreen(const Vec2 position)
   {
     Matrix translate = Matrix::Translation(position.x, position.y);
     Matrix m = translate * GetMatrix();
     return Vec2(m[2], m[5]);
   }
 
-  Vec2 Camera::ScreenToScreen(const Vec2 &position)
+  Vec2 Camera::ScreenToScreen(const Vec2 position)
   {
     Matrix translate = Matrix::Translation(position.x, position.y);
     Matrix m = translate * Matrix::Inverse(GetMatrix());

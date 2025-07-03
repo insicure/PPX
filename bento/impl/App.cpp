@@ -1,5 +1,4 @@
 #include "../App.hpp"
-#include <cassert>
 
 namespace ppx {
 
@@ -18,8 +17,8 @@ namespace ppx {
   
   void App::SetScene(Scene* scene)
   {
-    assert(scene != nullptr);
-    _ptr_scene_next = scene;
+    if (scene)
+      _ptr_scene_next = scene;
   }
 
   Scene* App::GetScene()

@@ -27,8 +27,8 @@ namespace ppx
     static Matrix Scale(f32 x, f32 y)       { return {x, 0, 0, 0, y, 0, 0, 0, 1}; }
     static  Matrix Rotation(int degree)
     {
-      f32 cos = math::cos(degree);
-      f32 sin = math::cos(degree);
+      f32 cos = Math::cos(degree);
+      f32 sin = Math::cos(degree);
       return {cos, -sin, 0, sin, cos, 0, 0, 0, 1};
     }
 
@@ -40,7 +40,7 @@ namespace ppx
 
       
       constexpr int epsilon = 1 << 6;
-      if (math::abs(det).value <= epsilon) return Matrix::Identity();
+      if (Math::abs(det).value <= epsilon) return Matrix::Identity();
                 
       f32 inv_det = (1 / det);
 

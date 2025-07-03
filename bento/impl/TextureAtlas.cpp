@@ -2,142 +2,200 @@
 #include "../Assert.hpp"
 #include "../external/murmurhash.h"
 #include "../Tracelog.hpp"
-#include "bento/Texture.hpp"
-#include "bento/TextureMap.hpp"
-#include <cstdint>
-#include <cstdio>
+#include "../Memory.hpp"
+#include "../Texture.hpp"
+#include "../TextureMap.hpp"
 #include <cstring>
-#include <new>
+
 
 #define ATLAS_HEADER 0x68637263
 
 namespace ppx
 {
-  TextureAtlas::TextureAtlas(const char* filename)
-  {
-    Load(filename);
+  static char* build_path_from_base(const char* filepath, const char* filename) {
+    // Get base directory from filepath
+    const char* last_slash = strrchr(filepath, '/');
+    if (!last_slash) last_slash = strrchr(filepath, '\\');
+    size_t base_len = last_slash ? (last_slash - filepath + 1) : 0;
+
+    // Find filename extension
+    const char* ext = strrchr(filename, '.');
+    const char* last_fn_slash = strrchr(filename, '/');
+    if (!last_fn_slash) last_fn_slash = strrchr(filename, '\\');
+
+    size_t name_len;
+    if (ext && (!last_fn_slash || ext > last_fn_slash)) {
+        name_len = ext - filename; // Length without extension
+    } else {
+        name_len = strlen(filename); // No extension found
+    }
+
+    // Allocate and build new path
+    char* new_path = ppx_alloc<char>(base_len + name_len + strlen(".sillyimg") + 1);
+    if (!new_path) return nullptr;
+
+    if (base_len) memcpy(new_path, filepath, base_len);
+    memcpy(new_path + base_len, filename, name_len);
+    strcpy(new_path + base_len + name_len, ".sillyimg");
+
+    return new_path;
   }
 
-  bool TextureAtlas::Load(const char * filename)
+  TextureAtlas *TextureAtlas::Load(const char * filename)
   {
-    FILE *file = nullptr;
-    bool res = false;
+    TextureAtlas *ptr_result = nullptr;
+    FILE *ptr_file = nullptr;
+    bool success = false;
+    char *str_texturepath = nullptr;
 
-    do
+    ptr_result = ppx_alloc<TextureAtlas>();
+    if (!ptr_result) return nullptr;
+
+    ptr_file = fopen(filename, "rb");
+    if (!ptr_file) {
+      TraceLog("FileData: fopen failed, %s", filename);
+      goto cleanup;
+    }
+
+    char line[128];
+
+    // check header
     {
-      file = fopen(filename, "rb");
-      res_sassert(res, file != nullptr, "TextureAtlas: fopen failed, %s", filename);
-      if (!res) break;
+      if (!fgets(line, sizeof(line), ptr_file))
+      {
+        TraceLog("TextureAtlas: invalid header, %s", filename);
+        goto cleanup;
+      }
 
-      char line[128];
+      int count = sscanf(line, "sillyatl %hhu", &ptr_result->length);
+      if (count != 1)
+      {
+        TraceLog("TextureAtlas: invalid header, %s", filename);
+        goto cleanup;
+      }
+    }
+
+    ptr_result->items = ppx_alloc<TextureAtlasItem>(ptr_result->length);
+    if (!ptr_result->items)
+    {
+      TraceLog("TextureAtlas: allocate TextureAtlasItem failed, %s", filename);
+      goto cleanup;
+    }
+
+    for (int i_tex=0; i_tex<ptr_result->length; i_tex++)
+    {
+      TextureAtlasItem &item = ptr_result->items[i_tex];
       
-      // check header
+      char texture_name[64];
+      
+      // get line
+      if (!fgets(line, sizeof(line), ptr_file))
       {
-        char *ptr = fgets(line, sizeof(line), file);
-        res_sassert(res, ptr != nullptr, "TextureAtlas: invalid header, %s", filename);
-        if(!res) break;
-
-        int count = sscanf(line, "sillyatl %hhu", &length);
-        res_sassert(res, count == 1, "TextureAtlas: invalid header, %s", filename);
-        if(!res) break;
+        TraceLog("TextureAtlas: invalid format, %s", filename);
+        goto cleanup;
       }
 
-      items = new(std::nothrow) TextureAtlasItem[length];
-      res_sassert(res, items != nullptr, "TextureAtlas: allocate TextureAtlasItem failed, %s", filename);
-      if(!res) break;
-
-      for (int i_tex = 0; i_tex<length; i_tex++)
+      int count = sscanf(line, "%s %hu", texture_name, &item.length);
+      if (count != 2)
       {
-        TextureAtlasItem &item = items[i_tex];
-        // get texture name and images length
-        char texture_name[64];
-        char path[128];
+        TraceLog("TextureAtlas: invalid format, %s", filename);
+        goto cleanup;
+      }
 
-        char *ptr = fgets(line, sizeof(line), file);
-        res_sassert(res, ptr != nullptr, "TextureAtlas: invalid format, %s", filename);
-        if(!res) break;
+      str_texturepath = build_path_from_base(filename, texture_name);
+      if (!str_texturepath)
+      {
+        TraceLog("TextureAtlas: failed to alloc texture path");
+        goto cleanup;
+      }
 
-        int count = sscanf(line, "%s %hu", texture_name, &item.length);
-        res_sassert(res, count == 2, "TextureAtlas: invalid format, %s", filename);
-        if(!res) break;
+      item.texture = Texture::Load(str_texturepath);
+      if (!item.texture)
+      {
+        TraceLog("TextureAtlas: failed to load texture, %s", str_texturepath);
+        goto cleanup;
+      }
 
-        snprintf(path, sizeof(path), "nitro:/atlas/%s.sillyimg", texture_name);
+      ppx_free_array(str_texturepath);
 
-        item.texture = new(std::nothrow) Texture();
-        res_sassert(res, item.texture != nullptr, "TextureAtlas: allocate Texture failed, %s", filename);
-        if (!res) break;
+      item.images = ppx_alloc<TextureMap>(item.length);
+      if (!item.images)
+      {
+        TraceLog("TextureAtlas: allocate TextureMap failed, %s", filename);
+        goto cleanup;
+      }
 
-        res = item.texture->Load(path);
-        if (!res) break;
+      // get images
+      for (int i_img=0; i_img<item.length; i_img++)
+      {
+        TextureMap &image = item.images[i_img];
 
-        item.images = new(std::nothrow) TextureMap[item.length];
-        res_sassert(res, item.images != nullptr, "TextureAtlas: allocate TextureMap failed, %s", filename);
-        if (!res) break;
+        char image_name[64];
+        uint16_t temp_rotated = 0;
 
-        // get images
-        for (int i_img=0; i_img<item.length; i_img++)
+        if (!fgets(line, sizeof(line), ptr_file))
         {
-          TextureMap &image = item.images[i_img];
-
-          char image_name[64];
-          uint16_t temp_rotated = 0;
-
-          char *ptr = fgets(line, sizeof(line), file);
-          res_sassert(res, ptr != nullptr, "TextureAtlas: invalid format, %s", filename);
-          if(!res) break;
-
-          int count = sscanf(line, "%s %hu %hu %hu %hu %hu %hu %hu %hu %hu",
-                              image_name,
-                              &image.frame_x,
-                              &image.frame_y,
-                              &image.frame_width,
-                              &image.frame_height,
-                              &image.offset_x,
-                              &image.offset_y,
-                              &image.width,
-                              &image.height,
-                              &temp_rotated);
-          res_sassert(res, count == 10, "TextureAtlas: invalid format, %s", filename);
-          if(!res) break;
-
-          image.rotated = (temp_rotated == 1);
-          image.id = item.texture->id;
-          image.hash = murmurhash(image_name, strlen(image_name), 0);
+          TraceLog("TextureAtlas: invalid format, %s", filename);
+          goto cleanup;
         }
-        if (!res) break;
 
+        int count = sscanf(line, "%s %hu %hu %hu %hu %hu %hu %hu %hu %hu",
+                            image_name,
+                            &image.frame_x,
+                            &image.frame_y,
+                            &image.frame_width,
+                            &image.frame_height,
+                            &image.offset_x,
+                            &image.offset_y,
+                            &image.width,
+                            &image.height,
+                            &temp_rotated);
+        if (count != 10)
+        {
+          TraceLog("TextureAtlas: invalid format, %s", filename);
+          goto cleanup;
+        }
+
+        image.rotated = (temp_rotated == 1);
+        image.id = item.texture->id;
+        image.hash = murmurhash(image_name, strlen(image_name), 0);
       }
-      if (!res) break;
+    }
 
-    } while(0);
+    success = true;
+    TraceLog("TextureAtlas: loaded, %s", filename);
 
-    if (file != nullptr) fclose(file);
-    if (!res)
+cleanup:
+    if (ptr_file) fclose(ptr_file);
+    if (str_texturepath) ppx_free_array(str_texturepath);
+
+    if (!success)
     {
       TraceLog("TextureAtlas: load failed,  %s", filename);
-      Unload();
+      ptr_result->Unload();
+      ppx_free_object(ptr_result);
     }
-    else TraceLog("TextureAtlas: loaded, %s", filename);
 
-    return res;
+    return ptr_result;
   }
 
   void TextureAtlas::Unload()
   {
-    if (isValid())
+    if (items)
     {
       for (int i_tex = 0; i_tex<length; i_tex++)
       {
-        items[i_tex].texture->Unload();
-        
-        delete items[i_tex].texture;
-        delete[] items[i_tex].images;
+        if (items[i_tex].texture)
+        {
+          items[i_tex].texture->Unload();
+          ppx_free_object(items[i_tex].texture);
+        }
+
+        if (items[i_tex].images)
+          ppx_free_array(items[i_tex].images);
       }
-
-      delete[] items; 
     }
-
-    items = nullptr;
+    
     length = 0;
   }
 

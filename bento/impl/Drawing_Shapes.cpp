@@ -197,16 +197,16 @@ namespace ppx
           _depth);
 
         glVertex2v16(
-          (position.x + math::cos(angle+step*2)*radius).toInt(),
-          (position.y + math::sin(angle+step*2)*radius).toInt());
+          (position.x + Math::cos(angle+step*2)*radius).toInt(),
+          (position.y + Math::sin(angle+step*2)*radius).toInt());
 
         glVertex2v16(
-          (position.x + math::cos(angle+step)*radius).toInt(),
-          (position.y + math::sin(angle+step)*radius).toInt());
+          (position.x + Math::cos(angle+step)*radius).toInt(),
+          (position.y + Math::sin(angle+step)*radius).toInt());
 
         glVertex2v16(
-          (position.x + math::cos(angle)*radius).toInt(),
-          (position.y + math::sin(angle)*radius).toInt());
+          (position.x + Math::cos(angle)*radius).toInt(),
+          (position.y + Math::sin(angle)*radius).toInt());
 
         angle += (step*2);
       }
@@ -223,17 +223,17 @@ namespace ppx
       for (int i=0; i<360; i+=segments)
       {
         glVertex3v16(
-          (position.x + math::cos(i)*radius).toInt(),
-          (position.y + math::sin(i)*radius).toInt(),
+          (position.x + Math::cos(i)*radius).toInt(),
+          (position.y + Math::sin(i)*radius).toInt(),
           _depth);
 
         glVertex2v16(
-          (position.x + math::cos(i+segments)*radius).toInt(),
-          (position.y + math::sin(i+segments)*radius).toInt());
+          (position.x + Math::cos(i+segments)*radius).toInt(),
+          (position.y + Math::sin(i+segments)*radius).toInt());
 
         glVertex2v16(
-          (position.x + math::cos(i+segments)*radius).toInt(),
-          (position.y + math::sin(i+segments)*radius).toInt());
+          (position.x + Math::cos(i+segments)*radius).toInt(),
+          (position.y + Math::sin(i+segments)*radius).toInt());
       }
     }
     glEnd();

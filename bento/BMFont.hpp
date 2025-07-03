@@ -1,4 +1,3 @@
-#include "bento/Color.hpp"
 #include "bento/Texture.hpp"
 #include <cstdint>
 
@@ -9,7 +8,7 @@ namespace ppx
   public:
     enum Alignment { ALIGN_LEFT, ALIGN_CENTER, ALIGN_RIGHT };
 
-    struct Char
+    struct BMFChar
     {
       uint32_t id = 0;
       uint16_t x = 0;
@@ -22,7 +21,7 @@ namespace ppx
       uint8_t page = 0;
     };
 
-    struct Kerning
+    struct BMFKerning
     {
       uint32_t first = 0;
       uint32_t second = 0;
@@ -39,20 +38,24 @@ namespace ppx
 
     // Glyphs and kerning
     uint32_t charCount;
-    Char* chars;
+    BMFChar* chars;
 
     uint32_t kerningCount;
-    Kerning* kernings;
+    BMFKerning* kernings;
 
-    bool Load(const char* filename);
+    static BMFont *Load(const char* filename);
     void Unload();
     bool isValid() const;
 
-    const Char* GetChar(uint32_t id) const;
+    const BMFChar* GetChar(uint32_t id) const;
     int16_t GetKerning(uint32_t first, uint32_t second) const;
-
+    
     uint32_t EncodeUTF8(const char *text, int &byteSize);
-    void DrawString(const char* text, const Vec2 position, int max_width = 0, int max_height = 0, const Color tint = 0xffffff);
-    void DrawGlyph(const Char* glyph, const Vec2 position, const Color tint = 0xffffff);
+    void DrawStringEx(const char *text, const Vec2 position, int max_width, int max_height, const Color tint);
+    void DrawGlyph(const BMFChar *glyph, const Vec2 position, const Color tint);
+
+    protected:
+      BMFont() = default;
+      BMFont& operator=(const BMFont&) = delete;
   };
 }

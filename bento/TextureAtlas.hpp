@@ -7,25 +7,27 @@
 
 namespace ppx
 {
-  struct TextureAtlasItem
-  {
-    Texture *texture = nullptr;
-    TextureMap *images = nullptr;
-    uint16_t length = 0;
-  };
-
   class TextureAtlas
   {
+  private:
+    struct TextureAtlasItem
+    {
+      Texture *texture = nullptr;
+      TextureMap *images = nullptr;
+      uint16_t length = 0;
+    };
+  
+    TextureAtlas() = default;
+    TextureAtlas& operator=(const TextureAtlas&) = delete;
+
   public:
     TextureAtlasItem *items = nullptr;
     uint8_t length = 0;
 
-    constexpr TextureAtlas() : items(nullptr), length(0) {}
-    TextureAtlas(const char* filename);
-
-    bool Load(const char* filename);
+    static TextureAtlas *Load(const char* filename);
     void Unload();
     bool isValid();
     TextureMap *operator[](const char *name);
+  
   };
 }

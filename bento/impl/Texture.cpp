@@ -1,10 +1,10 @@
 // most ds opengl-ish ignore a few arguments, this make me easier to spot one
-#include "bento/Texture.hpp"
-#include "bento/Color.hpp"
-#include "bento/SillyImage.hpp"
-#include "bento/Tracelog.hpp"
+#include "../Texture.hpp"
+#include "../Color.hpp"
+#include "../Memory.hpp"
+#include "../SillyImage.hpp"
+#include "../Tracelog.hpp"
 #include "nds/arm9/videoGL.h"
-#include <cstdint>
 
 constexpr int IGNORED = 0;
 extern s32 _depth;
@@ -16,32 +16,25 @@ namespace ppx
     return (size >= 8 && size <= 1024) && !(size & (size - 1));
   }
 
-  Texture::Texture(const SillyImage &image) {
-    if (!Load(image)) {
-      TraceLog("Texture: failed to create from SillyImage");
-    }
-  }
-
-  Texture::Texture(const char *filename) {
-    if (!Load(filename)) {
-      TraceLog("Texture: failed to load '%s'", filename);
-    }
-  }
-
-  bool Texture::Load(const SillyImage &image)
+  Texture *Texture::Load(const SillyImage &image)
   {
+    Texture *ptr_result = nullptr;
+    GL_TEXTURE_TYPE_ENUM gl_type = GL_TEXTURE_TYPE_ENUM::GL_NOTEXTURE;
+    constexpr int gl_param = GL_TEXTURE_WRAP_S|GL_TEXTURE_WRAP_T|GL_TEXTURE_COLOR0_TRANSPARENT|TEXGEN_OFF;
+    bool success = false;
+
+    ptr_result = ppx_alloc<Texture>();
+    if (!ptr_result) return nullptr;
+
     if (!image.isValid()) {
       TraceLog("Texture: source image invalid");
-      return false;
+      goto cleanup;
     }
 
     if (!isTextureDimensionValid(image.width) || !isTextureDimensionValid(image.height)) {
       TraceLog("Texture: invalid dimensions %ux%u", image.width, image.height);
-      return false;
+      goto cleanup;
     }
-
-    GL_TEXTURE_TYPE_ENUM gl_type = GL_TEXTURE_TYPE_ENUM::GL_NOTEXTURE;
-    constexpr int gl_param = GL_TEXTURE_WRAP_S|GL_TEXTURE_WRAP_T|GL_TEXTURE_COLOR0_TRANSPARENT|TEXGEN_OFF;
 
     // find texture type
     switch (image.format)
@@ -56,19 +49,18 @@ namespace ppx
       default:
       {
         TraceLog("Texture: invalid format %u", image.format);
-        return false;
+        goto cleanup;
       };
     }
 
-    if (glGenTextures(1, &id) != 1) {
+    if (glGenTextures(1, &ptr_result->id) != 1) {
       TraceLog("Texture: glGenTextures failed");
-      return false;
+      goto cleanup;
     }
 
-    if (glBindTexture(IGNORED, id) != 1) {
+    if (glBindTexture(IGNORED, ptr_result->id) != 1) {
       TraceLog("Texture: glBindTexture failed");
-      Unload();
-      return false;
+      goto cleanup;
     }
 
     if (glTexImage2D(IGNORED, IGNORED, gl_type, 
@@ -76,8 +68,7 @@ namespace ppx
                      gl_param, image.data) != 1) 
     {
       TraceLog("Texture: glTexImage2D failed");
-      Unload();
-      return false;
+      goto cleanup;
     }
 
     if (image.format == ImageType_INDEXED_256 ||
@@ -91,22 +82,35 @@ namespace ppx
                           IGNORED, image.palette_data) != 1) 
       {
         TraceLog("Texture: glColorTableEXT failed");
-        Unload();
-        return false;
+        goto cleanup;
       }
     }
 
-    width = image.width;
-    height = image.height;
-    TraceLog("Texture: loaded %ux%u id:%u", width, height, id);
-    return true;
+    success = true;
+    ptr_result->width = image.width;
+    ptr_result->height = image.height;
+    TraceLog("Texture: loaded %ux%u id:%u", ptr_result->width, ptr_result->height, ptr_result->id);
+
+cleanup:
+    if (!success)
+    {
+      ptr_result->Unload();
+      ppx_free_object(ptr_result);
+    }
+
+    return ptr_result;
   }
 
-  bool Texture::Load(const char *filename)
+  Texture *Texture::Load(const char *filename)
   {
-    SillyImage img;
-    if (!img.Load(filename)) return false;
-    return Load(img);
+    Texture *tex = nullptr;
+    SillyImage *img = SillyImage::Load(filename);
+    if (img) {
+      tex = Texture::Load(*img);
+      ppx_free_object(img);
+    }
+
+    return tex;
   }
 
   void Texture::Unload()

@@ -3,7 +3,7 @@
 #include "SillyImage.hpp"
 #include "Rect.hpp"
 #include "Vec2.hpp"
-#include "bento/Color.hpp"
+#include "Color.hpp"
 
 namespace ppx
 {
@@ -13,14 +13,10 @@ namespace ppx
     uint16_t width = 0;
     uint16_t height = 0;
 
-    constexpr Texture() : id(0), width(0), height(0) {}
-
-    Texture(const SillyImage &image);
-    Texture(const char *filename);
     virtual ~Texture() { }
 
-    bool Load(const SillyImage &image);
-    bool Load(const char *filename);
+    static Texture *Load(const SillyImage &image);
+    static Texture *Load(const char *filename);
     virtual void Unload();
     virtual bool isValid();
 
@@ -31,5 +27,8 @@ namespace ppx
                       bool flip_x = false, bool flip_y = false,
                       const Rect &region = {0, 0, -1, -1},
                       const Color tint = 0xffffff);
+    protected:
+      Texture() = default;
+      Texture& operator=(const Texture&) = delete;
   };
 }

@@ -12,12 +12,12 @@ namespace ppx
     CircularCounter(int max = 0) : max(max), value(0) {}
 
     inline int Next() {
-      value = math::mod(value+1, max+1);
+      value = Math::mod(value+1, max+1);
       return value;
     }
 
     inline int Prev() {
-      value = math::mod(value+max, max+1);
+      value = Math::mod(value+max, max+1);
       return value;
     } 
   };

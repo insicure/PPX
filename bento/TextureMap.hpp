@@ -17,7 +17,7 @@ namespace ppx
     bool rotated = false;
 
     constexpr TextureMap()
-      : Texture(), hash(0), frame_x(0), frame_y(0), offset_x(0), offset_y(0), frame_width(0), frame_height(0), rotated(false) { }
+      : hash(0), frame_x(0), frame_y(0), offset_x(0), offset_y(0), frame_width(0), frame_height(0), rotated(false) { }
 
     void Unload() override;
     bool isValid() override;
