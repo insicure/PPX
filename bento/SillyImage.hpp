@@ -29,7 +29,7 @@ namespace ppx
     int8_t format = ImageType_INVALID;
 
     static SillyImage *Load(const char *filename);
-    inline ~SillyImage() { Unload(); }
+    ~SillyImage() { Unload(); }
     void Unload();
     bool isValid() const;
 

@@ -11,7 +11,7 @@ namespace ppx {
     void Unload();
     bool isValid() const;
 
-    inline ~FileData() { Unload(); }
+    ~FileData() { Unload(); }
     uint8_t *data = nullptr;
     uint32_t length = 0;
 

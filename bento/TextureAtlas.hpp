@@ -21,6 +21,7 @@ namespace ppx
     TextureAtlas& operator=(const TextureAtlas&) = delete;
 
   public:
+    ~TextureAtlas() { Unload(); }
     TextureAtlasItem *items = nullptr;
     uint8_t length = 0;
 
