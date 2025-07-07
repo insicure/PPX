@@ -1,12 +1,19 @@
 #pragma once
 #include <cstdio>
+#include <utility>
 
 namespace ppx
 {
-  #ifndef NDEBUG
-    #define TraceLog(fmt, ...) fprintf(stderr, fmt"\n", ##__VA_ARGS__)
-  #else
-    #define TraceLog(fmt, ...) ((void)0)
-  #endif
+
+#ifndef NDEBUG
+  template<typename... Args>
+  void TraceLog(const char* fmt, Args&&... args) {
+    fprintf(stderr, fmt, std::forward<Args>(args)...);
+    fprintf(stderr, "\n");
+  }
+#else
+  template<typename... Args>
+  void TraceLog(const char*, Args&&...) {}
+#endif
 
 }
