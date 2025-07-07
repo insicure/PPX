@@ -8,7 +8,7 @@
 
 namespace ppx
 {
-  SillyImage *SillyImage::Load(const char * filename)
+    SillyImage *Load_SillyImage(const char *filename)
   {
     SillyImage *ptr_result = nullptr;
     FILE *ptr_file = nullptr;
@@ -17,7 +17,7 @@ namespace ppx
     uint32_t compress_size = 0;
     bool success = false;
 
-    ptr_result = ppx_alloc<SillyImage>();
+    ptr_result = ppx_malloc<SillyImage>();
     if (!ptr_result) return nullptr;
     
     // Validate filename
@@ -106,18 +106,18 @@ namespace ppx
     }
 
     // Read dimensions
-    if (fread(&ptr_result->width, sizeof(width), 1, ptr_file) != 1) {
+    if (fread(&ptr_result->width, sizeof(ptr_result->width), 1, ptr_file) != 1) {
       TraceLog("SillyImage: Failed read width: %s", filename);
       goto cleanup;
     }
     
-    if (fread(&ptr_result->height, sizeof(height), 1, ptr_file) != 1) {
+    if (fread(&ptr_result->height, sizeof(ptr_result->height), 1, ptr_file) != 1) {
       TraceLog("SillyImage: Failed read height: %s", filename);
       goto cleanup;
     }
 
     // Read palette
-    if (fread(&ptr_result->palette_count, sizeof(palette_count), 1, ptr_file) != 1) {
+    if (fread(&ptr_result->palette_count, sizeof(ptr_result->palette_count), 1, ptr_file) != 1) {
       TraceLog("SillyImage: Failed read palette_count: %s", filename);
       goto cleanup;
     }
@@ -134,7 +134,7 @@ namespace ppx
     }
 
     // Allocate palette buffer
-    ptr_result->palette_data = ppx_alloc<uint16_t>(ptr_result->palette_count);
+    ptr_result->palette_data = ppx_malloc<uint16_t>(ptr_result->palette_count);
     if (!ptr_result->palette_data) {
       TraceLog("SillyImage: alloc palette_data failed: %s", filename);
       goto cleanup;
@@ -146,13 +146,13 @@ namespace ppx
     }
 
     // Allocate image buffers
-    ptr_result->data = ppx_alloc<uint8_t>(original_size);
+    ptr_result->data = ppx_malloc<uint8_t>(original_size);
     if (!ptr_result->data) {
       TraceLog("SillyImage: alloc data failed: %s", filename);
       goto cleanup;
     }
 
-    temp_compress = ppx_alloc<uint8_t>(compress_size);
+    temp_compress = ppx_malloc<uint8_t>(compress_size);
     if (!temp_compress) {
       TraceLog("SillyImage: alloc temp_compress failed: %s", filename);
       goto cleanup;
@@ -173,31 +173,25 @@ namespace ppx
     TraceLog("SillyImage: Loaded successfully: %s", filename);
 
 cleanup:
-    if (temp_compress) ppx_free_array(temp_compress);
+    if (temp_compress) ppx_free(temp_compress);
     if (ptr_file) fclose(ptr_file);
 
     if (!success)
     {
-      ptr_result->Unload();
-      ppx_free_object(ptr_result);
+      TraceLog("SillyImage: Failed to load: %s", filename);
+      Unload_SillyImage(ptr_result);
     }
 
     return ptr_result;
   }
 
-  void SillyImage::Unload()
+  void Unload_SillyImage(SillyImage *&ptr)
   {
-    ppx_free_array(data);
-    ppx_free_array(palette_data);
-
-    width = 0;
-    height = 0;
-    palette_count = 0;
-    format = ImageType_INVALID;
-  }
-
-  bool SillyImage::isValid() const
-  {
-    return (data != nullptr || format != ImageType_INVALID);
+    if (ptr)
+    {
+      ppx_free(ptr->data);
+      ppx_free(ptr->palette_data);
+      ppx_free(ptr);
+    }
   }
 }

@@ -1,10 +1,9 @@
 #include "../BMFont.hpp"
-#include "bento/Memory.hpp"
-#include "bento/Texture.hpp"
-#include "bento/Tracelog.hpp"
-#include "bento/Vec2.hpp"
+#include "../Memory.hpp"
+#include "../Texture.hpp"
+#include "../Tracelog.hpp"
+#include "../Vec2.hpp"
 #include <algorithm>
-#include <cstdint>
 #include <cstdlib>
 #include <cstring>
 
@@ -67,7 +66,7 @@ namespace ppx
     }
 
     // Allocate and build new path
-    char* new_path = ppx_alloc<char>(base_len + name_len + strlen(".sillyimg") + 1);
+    char* new_path = ppx_malloc<char>(base_len + name_len + strlen(".sillyimg") + 1);
     if (!new_path) return NULL;
 
     if (base_len) memcpy(new_path, filepath, base_len);
@@ -77,17 +76,17 @@ namespace ppx
     return new_path;
   }
   
-  BMFont *BMFont::Load(const char * filename)
+  BMFont *Load_BMFont(const char* filename)
   {
     BMFont *ptr_result = nullptr;
     FILE* ptr_file = fopen(filename, "rb");
     BlockHeader block_header;
-    uint8_t* block_data = nullptr;
+    void* block_data = nullptr;
     char* pending_imgpath = nullptr;
     char* pending_basepath = nullptr;
     bool success = false;
 
-    ptr_result = ppx_alloc<BMFont>();
+    ptr_result = ppx_malloc<BMFont>();
     if (!ptr_result) return nullptr;
 
     // Validate filename
@@ -108,7 +107,7 @@ namespace ppx
 
 
     while (fread(&block_header, sizeof(block_header), 1, ptr_file) == 1) {
-      block_data = ppx_alloc<uint8_t>(block_header.size);
+      block_data = ppx_malloc<uint8_t>(block_header.size);
       if (!block_data) {
         TraceLog("BMFont: alloc failed for block %d", block_header.type);
         goto cleanup;
@@ -139,39 +138,40 @@ namespace ppx
         case 3:
         { // Pages block
           // Free any previous pending data
-          if (pending_imgpath) ppx_free_array(pending_imgpath);
+          if (pending_imgpath) ppx_free(pending_imgpath);
 
           // Copy entire pages block to pending storage
           // handle later incase pages block come before common block
-          pending_imgpath = ppx_alloc<char>(block_header.size);
+          pending_imgpath = ppx_malloc<char>(block_header.size);
           memcpy(pending_imgpath, block_data, block_header.size);
           break;
         }
 
         case 4:
         { // Chars block
-          ptr_result->charCount = block_header.size / sizeof(BMFChar);
-          ptr_result->chars = ppx_alloc<BMFChar>(block_header.size);
+          ptr_result->charCount = block_header.size / sizeof(BMFont::BMFChar);
+          ptr_result->chars = ppx_malloc<BMFont::BMFChar>(block_header.size);
           memcpy(ptr_result->chars, block_data, block_header.size);
           break;
         }
 
         case 5:
         { // Kerning pairs
-          ptr_result->kerningCount = block_header.size / sizeof(BMFKerning);
-          ptr_result->kernings = ppx_alloc<BMFKerning>(block_header.size);
+          ptr_result->kerningCount = block_header.size / sizeof(BMFont::BMFKerning);
+          ptr_result->kernings = ppx_malloc<BMFont::BMFKerning>(block_header.size);
           memcpy(ptr_result->kernings, block_data, block_header.size);
           break;
         }
       }
 
-      ppx_free_array(block_data);
+      ppx_free(block_data);
     }
+    
 
     // Process pending pages (must be done after Common block)
     if (pending_imgpath) {
       // Allocate memory for texture pointers
-      ptr_result->pageTextures = ppx_alloc<Texture>(ptr_result->pages);
+      ptr_result->pageTextures = ppx_malloc<Texture*>(ptr_result->pages);
 
       char* ptr = pending_imgpath;
 
@@ -187,14 +187,14 @@ namespace ppx
         // TODO: handle null
         pending_basepath = build_path_from_base(filename, ptr);
 
-        if (!ptr_result->pageTextures[i].Load(pending_basepath))
+        ptr_result->pageTextures[i] = Load_Texture(pending_basepath);
+        if (!ptr_result->pageTextures[i])
         {
           TraceLog("BMFont: failed to load texture %s", pending_basepath);
           goto cleanup;
         }
 
-        free(pending_basepath);
-        pending_basepath = nullptr;
+        ppx_free(pending_basepath);
         
         ptr += len + 1;
       }
@@ -204,38 +204,36 @@ namespace ppx
     TraceLog("BMFont: loaded successfully, %s", filename);
 
 cleanup:
-    if (!success) {
-      ptr_result->Unload();
-      ppx_free_object(ptr_result);
-      TraceLog("BMFont: load failed, %s", filename);
-    }
-
     if (ptr_file) fclose(ptr_file);
-    if (block_data) ppx_free_array(block_data);
-    if (pending_imgpath) ppx_free_array(pending_imgpath);
-    if (pending_basepath) ppx_free_array(pending_basepath);
+    if (block_data) ppx_free(block_data);
+    if (pending_imgpath) ppx_free(pending_imgpath);
+    if (pending_basepath) ppx_free(pending_basepath);
+    
+    if (!success) {
+      TraceLog("BMFont: load failed, %s", filename);
+      Unload_BMFont(ptr_result);
+    }
 
     return ptr_result;
   }
 
-  void BMFont::Unload()
+  void Unload_BMFont(BMFont *&ptr)
   {
-    if (pageTextures) ppx_free_array(pageTextures);
-    if (chars) ppx_free_array(chars);
-    if (kernings) ppx_free_array(kernings);
+    if (ptr)
+    {
+      if (ptr->pageTextures)
+      {
+        for (int i=0; i<ptr->pages; i++)
+          if (ptr->pageTextures[i]) ppx_free(ptr->pageTextures[i]);
 
-    lineHeight = 0;
-    base = 0;
-    pages = 0;
-    charCount = 0;
-    kerningCount = 0;
-  }
+        ppx_free(ptr->pageTextures);
+      }
 
-  bool BMFont::isValid() const
-  {
-    return pageTextures != nullptr && 
-           chars != nullptr && 
-           pages > 0;
+      if (ptr->chars) ppx_free(ptr->chars);
+      if (ptr->kernings) ppx_free(ptr->kernings);
+    }
+
+    ppx_free(ptr);
   }
 
   const BMFont::BMFChar* BMFont::GetChar(uint32_t id) const {
@@ -306,7 +304,7 @@ cleanup:
 
   void BMFont::DrawGlyph(const BMFChar *glyph, const Vec2 position, const Color tint)
   {
-    pageTextures[glyph->page].Draw(
+    pageTextures[glyph->page]->Draw(
       {position.x+glyph->xoffset, position.y+glyph->yoffset},
       {1, 1}, {0, 0}, 0, false, false,
       {glyph->x, glyph->y, glyph->width, glyph->height},

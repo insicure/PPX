@@ -31,7 +31,7 @@ namespace ppx
     }
 
     // Allocate and build new path
-    char* new_path = ppx_alloc<char>(base_len + name_len + strlen(".sillyimg") + 1);
+    char* new_path = ppx_malloc<char>(base_len + name_len + strlen(".sillyimg") + 1);
     if (!new_path) return nullptr;
 
     if (base_len) memcpy(new_path, filepath, base_len);
@@ -41,15 +41,18 @@ namespace ppx
     return new_path;
   }
 
-  TextureAtlas *TextureAtlas::Load(const char * filename)
+  TextureAtlas *Load_TextureAtlas(const char* filename)
   {
     TextureAtlas *ptr_result = nullptr;
     FILE *ptr_file = nullptr;
     bool success = false;
     char *str_texturepath = nullptr;
 
-    ptr_result = ppx_alloc<TextureAtlas>();
+    ptr_result = ppx_malloc<TextureAtlas>();
     if (!ptr_result) return nullptr;
+
+    ptr_result->pages = 0;
+    ptr_result->pageTexture = nullptr;
 
     ptr_file = fopen(filename, "rb");
     if (!ptr_file) {
@@ -67,7 +70,7 @@ namespace ppx
         goto cleanup;
       }
 
-      int count = sscanf(line, "sillyatl %hhu", &ptr_result->length);
+      int count = sscanf(line, "sillyatl %hhu", &ptr_result->pages);
       if (count != 1)
       {
         TraceLog("TextureAtlas: invalid header, %s", filename);
@@ -75,16 +78,16 @@ namespace ppx
       }
     }
 
-    ptr_result->items = ppx_alloc<TextureAtlasItem>(ptr_result->length);
-    if (!ptr_result->items)
+    ptr_result->pageTexture = ppx_calloc<TextureAtlas::TexturePages>(ptr_result->pages);
+    if (!ptr_result->pageTexture)
     {
       TraceLog("TextureAtlas: allocate TextureAtlasItem failed, %s", filename);
       goto cleanup;
     }
 
-    for (int i_tex=0; i_tex<ptr_result->length; i_tex++)
+    for (int i_tex=0; i_tex<ptr_result->pages; i_tex++)
     {
-      TextureAtlasItem &item = ptr_result->items[i_tex];
+      TextureAtlas::TexturePages &item = ptr_result->pageTexture[i_tex];
       
       char texture_name[64];
       
@@ -109,16 +112,16 @@ namespace ppx
         goto cleanup;
       }
 
-      item.texture = Texture::Load(str_texturepath);
+      item.texture = Load_Texture(str_texturepath);
       if (!item.texture)
       {
         TraceLog("TextureAtlas: failed to load texture, %s", str_texturepath);
         goto cleanup;
       }
 
-      ppx_free_array(str_texturepath);
+      ppx_free(str_texturepath);
 
-      item.images = ppx_alloc<TextureMap>(item.length);
+      item.images = ppx_malloc<TextureMap>(item.length);
       if (!item.images)
       {
         TraceLog("TextureAtlas: allocate TextureMap failed, %s", filename);
@@ -150,6 +153,19 @@ namespace ppx
                             &image.width,
                             &image.height,
                             &temp_rotated);
+
+        // TraceLog("%s %hu %hu %hu %hu %hu %hu %hu %hu %hu",
+        //   image_name,
+        //   image.frame_x,
+        //   image.frame_y,
+        //   image.frame_width,
+        //   image.frame_height,
+        //   image.offset_x,
+        //   image.offset_y,
+        //   image.width,
+        //   image.height,
+        //   temp_rotated);
+
         if (count != 10)
         {
           TraceLog("TextureAtlas: invalid format, %s", filename);
@@ -167,51 +183,49 @@ namespace ppx
 
 cleanup:
     if (ptr_file) fclose(ptr_file);
-    if (str_texturepath) ppx_free_array(str_texturepath);
+    if (str_texturepath) ppx_free(str_texturepath);
 
     if (!success)
     {
       TraceLog("TextureAtlas: load failed,  %s", filename);
-      ptr_result->Unload();
-      ppx_free_object(ptr_result);
+      Unload_TextureAtlas(ptr_result);
     }
 
     return ptr_result;
   }
 
-  void TextureAtlas::Unload()
+  void Unload_TextureAtlas(TextureAtlas *&ptr)
   {
-    if (items)
+    if (ptr)
     {
-      for (int i_tex = 0; i_tex<length; i_tex++)
+      if (ptr->pageTexture)
       {
-        if (items[i_tex].texture)
+        for (int i_tex=0; i_tex<ptr->pages; i_tex++)
         {
-          items[i_tex].texture->Unload();
-          ppx_free_object(items[i_tex].texture);
+          if (ptr->pageTexture[i_tex].texture)
+            Unload_Texture(ptr->pageTexture[i_tex].texture);
+
+          if (ptr->pageTexture[i_tex].images)
+            ppx_free(ptr->pageTexture[i_tex].images);
         }
-
-        if (items[i_tex].images)
-          ppx_free_array(items[i_tex].images);
       }
-    }
-    
-    length = 0;
-  }
 
-  bool TextureAtlas::isValid()
-  {
-    return (items != nullptr);
+      ppx_free(ptr);
+    }
   }
 
   TextureMap *TextureAtlas::operator[](const char *name)
   {
-    // find texturemap
+    return find(name);
+  }
+
+  TextureMap *TextureAtlas::find(const char *name)
+  {
     uint32_t hash = murmurhash(name, strlen(name), 0);
 
-    for (int i_tex=0; i_tex<length; i_tex++)
+    for (int i_tex=0; i_tex<pages; i_tex++)
     {
-      TextureAtlasItem &item = items[i_tex];
+      TexturePages &item = pageTexture[i_tex];
 
       for (int i_img=0; i_img<item.length; i_img++)
       {

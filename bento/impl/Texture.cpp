@@ -16,28 +16,28 @@ namespace ppx
     return (size >= 8 && size <= 1024) && !(size & (size - 1));
   }
 
-  Texture *Texture::Load(const SillyImage &image)
+  Texture *Load_Texture(const SillyImage *image)
   {
     Texture *ptr_result = nullptr;
     GL_TEXTURE_TYPE_ENUM gl_type = GL_TEXTURE_TYPE_ENUM::GL_NOTEXTURE;
     constexpr int gl_param = GL_TEXTURE_WRAP_S|GL_TEXTURE_WRAP_T|GL_TEXTURE_COLOR0_TRANSPARENT|TEXGEN_OFF;
     bool success = false;
 
-    ptr_result = ppx_alloc<Texture>();
+    ptr_result = ppx_malloc<Texture>();
     if (!ptr_result) return nullptr;
 
-    if (!image.isValid()) {
+    if (!image) {
       TraceLog("Texture: source image invalid");
       goto cleanup;
     }
 
-    if (!isTextureDimensionValid(image.width) || !isTextureDimensionValid(image.height)) {
-      TraceLog("Texture: invalid dimensions %ux%u", image.width, image.height);
+    if (!isTextureDimensionValid(image->width) || !isTextureDimensionValid(image->height)) {
+      TraceLog("Texture: invalid dimensions %ux%u", image->width, image->height);
       goto cleanup;
     }
 
     // find texture type
-    switch (image.format)
+    switch (image->format)
     {
       case ImageType_R5G5B5A1: gl_type = GL_TEXTURE_TYPE_ENUM::GL_RGBA; break;
       case ImageType_INDEXED_4: gl_type = GL_TEXTURE_TYPE_ENUM::GL_RGB4; break;
@@ -48,7 +48,7 @@ namespace ppx
 
       default:
       {
-        TraceLog("Texture: invalid format %u", image.format);
+        TraceLog("Texture: invalid format %u", image->format);
         goto cleanup;
       };
     }
@@ -64,22 +64,22 @@ namespace ppx
     }
 
     if (glTexImage2D(IGNORED, IGNORED, gl_type, 
-                     image.width, image.height, IGNORED, 
-                     gl_param, image.data) != 1) 
+                     image->width, image->height, IGNORED, 
+                     gl_param, image->data) != 1) 
     {
       TraceLog("Texture: glTexImage2D failed");
       goto cleanup;
     }
 
-    if (image.format == ImageType_INDEXED_256 ||
-        image.format == ImageType_INDEXED_16 ||
-        image.format == ImageType_INDEXED_4 ||
-        image.format == ImageType_INDEXED_32_A8 ||
-        image.format == ImageType_INDEXED_8_A32)
+    if (image->format == ImageType_INDEXED_256 ||
+        image->format == ImageType_INDEXED_16 ||
+        image->format == ImageType_INDEXED_4 ||
+        image->format == ImageType_INDEXED_32_A8 ||
+        image->format == ImageType_INDEXED_8_A32)
     {
       if (glColorTableEXT(IGNORED, IGNORED, 
-                          image.palette_count, IGNORED, 
-                          IGNORED, image.palette_data) != 1) 
+                          image->palette_count, IGNORED, 
+                          IGNORED, image->palette_data) != 1) 
       {
         TraceLog("Texture: glColorTableEXT failed");
         goto cleanup;
@@ -87,48 +87,45 @@ namespace ppx
     }
 
     success = true;
-    ptr_result->width = image.width;
-    ptr_result->height = image.height;
+    ptr_result->width = image->width;
+    ptr_result->height = image->height;
     TraceLog("Texture: loaded %ux%u id:%u", ptr_result->width, ptr_result->height, ptr_result->id);
 
 cleanup:
     if (!success)
     {
-      ptr_result->Unload();
-      ppx_free_object(ptr_result);
+      Unload_Texture(ptr_result);
     }
 
     return ptr_result;
   }
 
-  Texture *Texture::Load(const char *filename)
+  Texture *Load_Texture(const char *filename)
   {
     Texture *tex = nullptr;
-    SillyImage *img = SillyImage::Load(filename);
+    SillyImage *img = Load_SillyImage(filename);
     if (img) {
-      tex = Texture::Load(*img);
-      ppx_free_object(img);
+      tex = Load_Texture(img);
+      Unload_SillyImage(img);
     }
 
     return tex;
   }
 
-  void Texture::Unload()
+  void Unload_Texture(Texture *&ptr)
   {
-    if (!isValid()) return;
+    if (ptr)
+    {
+      const int temp_id = ptr->id;
 
-    const int temp_id = id;
-    if (glDeleteTextures(1, &id) == 1) {
-      TraceLog("Texture: unloaded id:%i", temp_id);
-      id = width = height = 0;
-    } else {
-      TraceLog("Texture: failed to unload id:%i", temp_id);
+      if (glDeleteTextures(1, &ptr->id) == 1)
+        TraceLog("Texture: unloaded id:%i", temp_id);
+      else
+        TraceLog("Texture: failed to unload id:%i", temp_id);
+
+      ppx_free(ptr);
     }
-  }
 
-  bool Texture::isValid()
-  {
-    return (width > 0) && (height > 0);
   }
 
   void Texture::Draw(const Vec2 &position, const Vec2 &scale, const Vec2 &origin, int rotation, bool flip_x, bool flip_y, const Rect &region, const Color tint)

@@ -4,20 +4,13 @@
 
 namespace ppx {
 
-  class FileData
+  struct FileData
   {
-  public:
-    static FileData* Load(const char *filename);
-    void Unload();
-    bool isValid() const;
-
-    ~FileData() { Unload(); }
     uint8_t *data = nullptr;
     uint32_t length = 0;
-
-  private:
-    FileData() = default;
-    FileData& operator=(const FileData&) = delete;
   };
 
+  FileData *Load_FileData(const char *filename);
+  void Load_FileData(FileData *&ptr);
+  void Unload_FileData(FileData *&ptr);
 }

@@ -4,15 +4,18 @@
 
 namespace ppx
 {
-  FileData* FileData::Load(const char *filename)
+  FileData *Load_FileData(const char *filename)
   {
     FileData *ptr_result = nullptr;
     FILE *ptr_file = nullptr;
     uint32_t bytes_read;
     bool success = false;
 
-    ptr_result = ppx_alloc<FileData>();
+    ptr_result = ppx_malloc<FileData>();
     if (!ptr_result) return nullptr;
+
+    ptr_result->length = 0;
+    ptr_result->data = nullptr;
 
     // Validate filename
     if (filename == nullptr || filename[0] == '\0') {
@@ -48,7 +51,7 @@ namespace ppx
     }
 
     // Allocate buffer
-    ptr_result->data = ppx_alloc<uint8_t>(ptr_result->length);
+    ptr_result->data = ppx_malloc<uint8_t>(ptr_result->length);
     if (!ptr_result->data) {
       TraceLog("FileData: alloc failed, %s", filename);
       goto cleanup;
@@ -70,21 +73,18 @@ cleanup:
 
     if (!success)
     {
-      ptr_result->Unload();
-      ppx_free_object(ptr_result);
+      Unload_FileData(ptr_result);
       TraceLog("FileData: load failed, %s", filename);
     }
     return ptr_result;
   }
 
-  void FileData::Unload()
+  void Unload_FileData(FileData *&ptr)
   {
-    if (data) ppx_free_array(data);
-    length = 0;
-  }
-
-  bool FileData::isValid() const
-  {
-    return (data != nullptr);
+    if (ptr)
+    {
+      if (ptr->data) ppx_free(ptr->data);
+      ppx_free(ptr);
+    }
   }
 }

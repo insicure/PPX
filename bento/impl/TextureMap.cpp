@@ -1,4 +1,4 @@
-#include "bento/TextureMap.hpp"
+#include "../TextureMap.hpp"
 #include "nds/arm9/videoGL.h"
 #include <utility>
 
@@ -6,17 +6,6 @@ extern s32 _depth;
 
 namespace ppx
 {
-  void TextureMap::Unload()
-  {
-    // does nothing, TextureAtlas should be unloaded instead
-    return;
-  }
-
-  bool TextureMap::isValid()
-  {
-    return (id > 0) && (width > 0) && (height > 0) && (hash != 0);
-  }
-
   void TextureMap::Draw(const Vec2 &position, const Vec2 &scale,const Vec2 &origin,int rotation,bool flip_x, bool flip_y,const Rect &region, const Color tint)
   {
     // TODO: region crop might not working, not thoroughly tested!
