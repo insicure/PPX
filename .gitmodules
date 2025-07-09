@@ -1,3 +1,6 @@
 [submodule "external/FastLZ"]
 	path = external/FastLZ
 	url = https://github.com/ariya/FastLZ.git
+[submodule "external/murmurhash"]
+	path = external/murmurhash
+	url = https://github.com/jwerle/murmurhash.c.git

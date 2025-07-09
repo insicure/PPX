@@ -1,10 +1,10 @@
 #include "../TextureAtlas.hpp"
 #include "../Assert.hpp"
-#include "../external/murmurhash.h"
 #include "../Tracelog.hpp"
 #include "../Memory.hpp"
 #include "../Texture.hpp"
 #include "../TextureMap.hpp"
+#include "murmurhash.h"
 #include <cstring>
 
 

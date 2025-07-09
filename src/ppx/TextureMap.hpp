@@ -1,8 +1,8 @@
 #pragma once
 
-#include "bento/Color.hpp"
-#include "bento/Rect.hpp"
-#include "bento/Vec2.hpp"
+#include "Color.hpp"
+#include "Rect.hpp"
+#include "Vec2.hpp"
 #include <cstdint>
 
 namespace ppx
