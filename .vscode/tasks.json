@@ -1,0 +1,40 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "run emulator",
+      "type": "shell",
+      "command": "melonDS ppx-example.nds",
+      "problemMatcher": [],
+      "options": {
+        "cwd": "${workspaceFolder}/example"
+      },
+    },
+    {
+      "label": "build",
+      "type": "shell",
+      "command": "compiledb make",
+      "problemMatcher": [],
+      "options": {
+        "cwd": "${workspaceFolder}/example"
+      },
+    },
+    {
+      "label": "build & run",
+      "type": "shell",
+      "dependsOrder": "sequence",
+      "dependsOn": [
+        "build",
+        "run emulator"
+      ],
+      "problemMatcher": [],
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      },
+      "options": {
+        "cwd": "${workspaceFolder}/example"
+      },
+    }
+  ]
+}

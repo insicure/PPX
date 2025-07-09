@@ -1,0 +1,5 @@
+sillyatl 1
+prototype 3
+box1 2 2 20 20 0 0 20 20 0
+box2 2 26 20 20 0 0 20 20 0
+player 2 50 16 16 0 0 16 16 0

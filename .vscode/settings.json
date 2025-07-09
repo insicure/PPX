@@ -1,0 +1,9 @@
+{
+  "clangd.arguments": [
+    "--query-driver=/opt/wonderful/toolchain/gcc-arm-none-eabi/bin/arm-none-eabi-*"
+  ],
+  "files.associations": {
+    "*.arm9": "makefile",
+    "*.arm7": "makefile"
+  }
+}
