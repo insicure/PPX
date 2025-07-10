@@ -1,6 +1,7 @@
 #include "ppx/Drawing.hpp"
 #include "MovieclipTest.hpp"
 #include "ppx/TextureAtlas.hpp"
+#include "ppx/Tracelog.hpp"
 #include "ppx/Vec2.hpp"
 #include "nds/arm9/console.h"
 #include "nds/arm9/input.h"
@@ -61,15 +62,22 @@ void MovieclipTest::Update()
     
     if (atlas)
     {
-      TextureMap *tex = atlas->find("Idle02");
+      TextureMap *tex = atlas->find("Idle01");
+      // tex->rotated = false;
+      // TraceLog("rot %u", tex->rotated);
   
       if (tex)
       {
         SetColor(Color::Red());
         DrawRect({0, 0, tex->width, tex->height});
+
+        int offx = 4;
+        int offy = 5;
+        int sizex = 20;
+        int sizey = 30;
   
-        tex->Draw({x, y});
-        tex->Draw({x+5, y+4}, {1, 1}, {0, 0}, 0, false, false, {5, 4, 20, 30}, Color::Blue());
+        tex->Draw({x, y}, {1, 1}, {0, 0}, rotatiton);
+        if (keysHeld() & KEY_B) tex->Draw({x, y}, {1, 1}, {0, 0}, rotatiton, false, false, {offx, offy, sizex, sizey}, Color::Blue());
       }
     }
   }

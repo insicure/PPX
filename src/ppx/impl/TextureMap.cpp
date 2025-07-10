@@ -19,8 +19,8 @@ namespace ppx
 
     const int x1 = base_x;
     const int y1 = base_y;
-    const int x2 = base_x + region_width;
-    const int y2 = base_y + region_height;
+    const int x2 = base_x + ((rotated) ? region_height : region_width);
+    const int y2 = base_y + ((rotated) ? region_width : region_height);
 
     // Handle flipping
     int texcoords[4][2] = {
@@ -31,18 +31,30 @@ namespace ppx
     };
 
     // Handle rotated
-    if (rotated) {
-      for (int i=0; i<4; i++) {
-        std::swap(texcoords[i][0], texcoords[i][1]);
-        texcoords[i][1] = frame_y + region_height - texcoords[i][1];
+    if (rotated)
+    {
+      // Store original top-left
+      int tl_x = texcoords[0][0];
+      int tl_y = texcoords[0][1];
+
+      // Rotate clockwise (shift left)
+      for (int i = 0; i < 3; i++) {
+          texcoords[i][0] = texcoords[i+1][0];
+          texcoords[i][1] = texcoords[i+1][1];
       }
+
+      // Set new bottom-right (original top-left)
+      texcoords[3][0] = tl_x;
+      texcoords[3][1] = tl_y;
     }
 
     glPushMatrix();
     glTranslatef32(position.x.toInt(), position.y.toInt(), 0);
-    glTranslatef32(offset_x, offset_y, 0);
+    glTranslatef32(offset_x,offset_y, 0); 
     if (rotation != 0) glRotateZi(degreesToAngle(rotation));
-    glTranslatef32(-origin.x.toInt(), -origin.y.toInt(), 0);
+    glTranslatef32(
+      -origin.x.toInt() + ((region.x > 0) ? region.x : 0).toInt(),
+      -origin.y.toInt() + ((region.y > 0) ? region.y : 0).toInt(), 0);
     glScalef32(scale.x.value, scale.y.value, f32(1).value);
 
     glBindTexture(GL_TEXTURE_2D, id);
